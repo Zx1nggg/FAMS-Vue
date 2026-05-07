@@ -1,11 +1,60 @@
-<script setup lang="ts"></script>
-
 <template>
-  <h1>You did it!</h1>
-  <p>
-    Visit <a href="https://vuejs.org/" target="_blank" rel="noopener">vuejs.org</a> to read the
-    documentation
-  </p>
+  <div class="app-container">
+    <nav class="nav-menu">
+      <router-link to="/">首页</router-link> |
+      <router-link to="/test">后端测试页</router-link>
+    </nav>
+
+    <main class="main-content">
+      <router-view v-slot="{ Component }">
+        <transition name="fade" mode="out-in">
+          <component :is="Component" />
+        </transition>
+      </router-view>
+    </main>
+  </div>
 </template>
 
-<style scoped></style>
+<script setup>
+// App.vue 现在变得非常干净，不需要写具体的业务逻辑了
+// 所有的状态和请求都交给具体的 View 组件去处理
+</script>
+
+<style>
+/* 简单的全局样式，你可以根据需要删除或修改 */
+.app-container {
+  font-family: Arial, sans-serif;
+  text-align: center;
+  color: #2c3e50;
+}
+
+.nav-menu {
+  padding: 30px;
+}
+
+.nav-menu a {
+  font-weight: bold;
+  color: #2c3e50;
+  text-decoration: none;
+  margin: 0 10px;
+}
+
+.nav-menu a.router-link-exact-active {
+  color: #42b983; /* 激活时的颜色，通常是 Vue 的经典绿 */
+}
+
+.main-content {
+  padding: 20px;
+}
+
+/* 简单的路由切换动画 */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+</style>
