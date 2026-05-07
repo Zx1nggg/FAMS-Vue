@@ -54,9 +54,7 @@
         <div class="flex items-center justify-center gap-4 mb-4">
           <!-- 产品Logo占位 (新增) -->
            <div class="w-16 h-16 bg-white/10 rounded-xl flex items-center justify-center border border-white/20 p-1">
-            <span class="text-[8px] text-teal-300 font-bold text-center leading-tight">
-              
-            </span>
+            <img src="/智渔-logo.png" class="w-full h-full object-contain" alt="智渔logo" />
           </div>
           <h1 class="text-5xl md:text-6xl font-extrabold text-white tracking-tight drop-shadow-lg flex items-center gap-4">
             智渔 <span class="text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-blue-400">FAMS</span>

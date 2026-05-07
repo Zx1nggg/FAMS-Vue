@@ -224,8 +224,8 @@ const updateTime = () => {
 
 // 退出登录
 const handleLogout = () => {
-  localStorage.removeItem('aqua_token')
-  localStorage.removeItem('aqua_user')
+  sessionStorage.removeItem('aqua_token')
+  sessionStorage.removeItem('aqua_user')
   router.push('/login')
 }
 
@@ -295,7 +295,7 @@ const handleResize = () => {
 
 onMounted(() => {
   // 加载用户信息
-  const userStr = localStorage.getItem('aqua_user')
+  const userStr = sessionStorage.getItem('aqua_user')
   if (userStr) {
     currentUser.value = JSON.parse(userStr)
   } else {

@@ -184,7 +184,8 @@ import {
 const router = useRouter()
 
 const handleLogout = () => {
-  localStorage.clear()
-  router.push('/')
+  sessionStorage.removeItem('aqua_token')
+  sessionStorage.removeItem('aqua_user')
+  router.push('/login')
 }
 </script>

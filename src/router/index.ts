@@ -37,8 +37,8 @@ const router = createRouter({
 
 // 简单的路由守卫拦截
 router.beforeEach((to, from, next) => {
-  const token = localStorage.getItem('aqua_token')
-  const userStr = localStorage.getItem('aqua_user')
+  const token = sessionStorage.getItem('aqua_token')
+  const userStr = sessionStorage.getItem('aqua_user')
   
   // 如果去 dashboard 但没 token，打回入口
   if (to.path.startsWith('/dashboard') && (!token || !userStr)) {
