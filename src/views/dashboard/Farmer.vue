@@ -199,6 +199,7 @@
 <script setup>
 import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { useRouter } from 'vue-router'
+import request from '@/utils/request'
 import * as echarts from 'echarts'
 // 图标组件
 import { 
@@ -223,10 +224,22 @@ const updateTime = () => {
 }
 
 // 退出登录
-const handleLogout = () => {
-  sessionStorage.removeItem('aqua_token')
-  sessionStorage.removeItem('aqua_user')
-  router.push('/login')
+const handleLogout = async () => {
+  try {
+    // 1. 通知后端销毁 Cookie + 黑名单 JTI
+    // 使用配置好的 request 实例（自动携带 HttpOnly Cookie，支持 withCredentials）
+    await request.post('/auth/logout');
+  } catch (error) {
+    // 即使后端请求失败（网络问题等），也继续执行前端清理
+    console.error('退出请求失败', error);
+  } finally {
+    // 2. 清除前端本地存储的用户展示信息
+    sessionStorage.removeItem('aqua_user');
+    // 🧹 不需要、也无法删除 aqua_token（HttpOnly Cookie，由后端销毁）
+
+    // 3. 跳转回登录页
+    router.push('/login');
+  }
 }
 
 // 初始化 ECharts (体现农业大数据的灵魂)

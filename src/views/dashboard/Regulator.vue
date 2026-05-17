@@ -183,9 +183,21 @@ import {
 
 const router = useRouter()
 
-const handleLogout = () => {
-  sessionStorage.removeItem('aqua_token')
-  sessionStorage.removeItem('aqua_user')
-  router.push('/login')
+const handleLogout = async () => {
+  try {
+    // 1. 真正通知后端：我要退出了！
+    // 这一步会触发后端的拉黑逻辑，并且后端会通过 Response Header 销毁 Cookie
+    await axios.post('/auth/logout'); 
+    
+  } catch (error) {
+    console.error('退出请求失败', error);
+  } finally {
+    // 2. 清理前端自己存的非敏感用户信息（比如昵称、头像）
+    sessionStorage.removeItem('aqua_user'); 
+    // 注意：不要再去 removeItem('aqua_token') 了，因为你根本摸不到它，交由后端销毁
+    
+    // 3. 跳转回登录页
+    router.push('/login');
+  }
 }
 </script>

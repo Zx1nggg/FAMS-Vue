@@ -1,10 +1,10 @@
 <template>
   <div class="min-h-screen flex bg-slate-50 font-sans">
     
-    <!-- 左侧：科研与实景融合的沉浸展示区 -->
+    <!-- 左侧栏：展示区 -->
     <div class="hidden lg:flex lg:w-1/2 relative bg-slate-900 overflow-hidden items-center justify-center">
       
-      <!-- 动态切换的真实背景图 -->
+      <!-- 动态切换的背景图 -->
       <div class="absolute inset-0 bg-slate-900">
          <img src="/farmer.png" class="absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ease-in-out" :class="currentRole === 'farmer' ? 'opacity-100' : 'opacity-0'" alt="生产与示范端背景" />
          <img src="/regulator.png" class="absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ease-in-out" :class="currentRole === 'regulator' ? 'opacity-100' : 'opacity-0'" alt="科研与监管端背景" />
@@ -26,7 +26,7 @@
       <!-- 为文字容器增加阴影 -->
       <div class="relative z-10 text-white px-16 max-w-2xl w-full drop-shadow-2xl">
         
-        <!-- 高校归属感标识 -->
+        <!-- 高校标识 -->
         <div class="flex items-center gap-3 mb-10 opacity-90">
           <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center border border-white/20 overflow-hidden p-0.5 shadow-lg">
             <img src="/华南农业大学-logo.svg" class="w-full h-full object-contain" alt="华农校徽" />
@@ -57,7 +57,7 @@
       </div>
     </div>
 
-    <!-- 右侧：厚重严谨的表单区 -->
+    <!-- 右侧栏：表单区 -->
     <div class="w-full lg:w-1/2 flex flex-col justify-center relative bg-white shadow-[-20px_0_40px_rgba(0,0,0,0.05)] z-20">
       
       <!-- 顶部返回条 -->
@@ -130,7 +130,7 @@
             </div>
           </div>
 
-          <!-- 记住我 (安全升级版) -->
+          <!-- 记住我 -->
           <div class="flex items-center justify-between">
             <label class="flex items-center gap-2 cursor-pointer group">
               <input 
@@ -139,7 +139,7 @@
                 class="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-600 cursor-pointer"
               />
               <span class="text-xs font-medium text-slate-500 group-hover:text-slate-800 transition-colors">
-                记住账号 (密码由浏览器安全托管)
+                记住账号
               </span>
             </label>
           </div>
@@ -224,7 +224,7 @@ const roleConfigs = {
 const roleConfig = computed(() => roleConfigs[currentRole.value] || roleConfigs.farmer)
 
 onMounted(() => {
-  // 1. 确定界面角色 UI 优先级： 路由携带 > 最后一次登录的记录 > 默认
+  // 确定界面角色 UI 优先级： 路由携带 > 最后一次登录的记录 > 默认
   const lastRole = localStorage.getItem('fams_last_role')
   if (route.query.role) {
     currentRole.value = route.query.role
@@ -234,12 +234,12 @@ onMounted(() => {
     currentRole.value = 'farmer'
   }
 
-  // 2. 精准匹配：读取保存的账号对象
+  // 精准匹配：读取保存的账号对象
   const savedAccountStr = localStorage.getItem('fams_remembered_account')
   if (savedAccountStr) {
     try {
       const savedAccount = JSON.parse(savedAccountStr)
-      // 🌟 解决串台问题：只有当保存的角色和当前正在打开的页面角色一致时，才自动填入账号
+      // 只有当保存的角色和当前正在打开的页面角色一致时，才自动填入账号
       if (savedAccount.role === currentRole.value) {
         loginForm.username = savedAccount.username
         loginForm.rememberUsername = true
@@ -261,7 +261,7 @@ const fillTestAccount = (role) => {
   if(role === 'leader') currentRole.value = 'regulator'
 }
 
-// 发往后端的真实登录请求
+  // 后端的真实登录请求
 const handleLogin = async () => {
   loading.value = true
   errorMsg.value = ''
@@ -272,15 +272,28 @@ const handleLogin = async () => {
       password: loginForm.password
     })
 
-    const { token, user } = res.data
+    // -------------------------------------------------------
+    // 🎯 核心理解：Token 存在哪里？
+    //
+    // 后端登录成功后，自动将 Token 写入了 HttpOnly Cookie（aqua_token）。
+    // HttpOnly 意味着 JavaScript 代码根本无法读取/修改这个 Cookie，
+    // 浏览器会在每次同源请求中自动携带它。
+    //
+    // ⚡ 所以你在这里不需要、也做不到手动存 Token！
+    //    只需要把用来展示昵称和头像的 user 信息存下来即可。
+    // -------------------------------------------------------
 
-    sessionStorage.setItem('aqua_token', token)
+    // 后端响应格式：Result<Map<String, Object>>
+    // = { code: 200, message: "success", data: { user: { name, role } } }
+    const { user } = res.data
+
+    // 存用户展示信息（昵称、角色），Token 由 HttpOnly Cookie 管理
     sessionStorage.setItem('aqua_user', JSON.stringify(user))
 
-    // 🌟 解决退出重定向问题：在登录时，无论如何都记录一下最后一次成功登录的身份界面
+    // 解决退出重定向问题：在登录时，无论如何都记录一下最后一次成功登录的身份界面
     localStorage.setItem('fams_last_role', currentRole.value)
 
-    // 🌟 解决串台问题：存入对象（包含角色和账号），而不仅仅是账号字符串
+    // 解决串台问题：存入对象（包含角色和账号）
     if (loginForm.rememberUsername) {
       localStorage.setItem('fams_remembered_account', JSON.stringify({
         username: loginForm.username,

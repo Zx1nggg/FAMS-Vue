@@ -16,12 +16,10 @@
 </template>
 
 <script setup>
-// App.vue 现在变得非常干净，不需要写具体的业务逻辑了
 // 所有的状态和请求都交给具体的 View 组件去处理
 </script>
 
 <style>
-/* 简单的全局样式，你可以根据需要删除或修改 */
 .app-container {
   font-family: Arial, sans-serif;
   text-align: center;
@@ -40,7 +38,7 @@
 }
 
 .nav-menu a.router-link-exact-active {
-  color: #42b983; /* 激活时的颜色，通常是 Vue 的经典绿 */
+  color: #42b983; /* Vue 默认绿色高亮 */
 }
 
 .main-content {
