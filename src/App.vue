@@ -1,9 +1,6 @@
 <template>
   <div class="app-container">
-    <nav class="nav-menu">
-      <router-link to="/">首页</router-link> |
-      <router-link to="/test">后端测试页</router-link>
-    </nav>
+    
 
     <main class="main-content">
       <router-view v-slot="{ Component }">

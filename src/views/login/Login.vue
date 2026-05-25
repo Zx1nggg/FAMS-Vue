@@ -305,7 +305,7 @@ const handleLogin = async () => {
 
     // 路由分发 
     let path = '/'
-    if (user.role === 'FARMER') path = '/dashboard/farmer'
+    if (user.role === 'FARMER') path = '/farmer/dashboard'
     else if (user.role === 'REGULATOR') path = '/dashboard/regulator'
     else if (user.role === 'ADMIN') path = '/dashboard/admin'
     

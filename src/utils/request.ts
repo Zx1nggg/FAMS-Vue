@@ -13,6 +13,20 @@ const service = axios.create({
 service.interceptors.request.use(
   (config) => {
     // HttpOnly Cookie 由浏览器自动在每次同源请求中携带
+    const currentFarmId = sessionStorage.getItem('current_farm_id')
+    const userStr = sessionStorage.getItem('aqua_user')
+
+    if (currentFarmId && userStr) {
+      try {
+        const user = JSON.parse(userStr)
+        if (user.role === 'FARMER') {
+          config.headers = config.headers || {}
+          config.headers['X-Current-Farm-Id'] = currentFarmId
+        }
+      } catch {
+        // ignore parse failure
+      }
+    }
     return config;
   },
   (error) => {

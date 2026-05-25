@@ -4,6 +4,11 @@ import Login from '../views/login/Login.vue'
 import FarmerDashboard from '../views/dashboard/Farmer.vue' // 原来的 Index.vue 改名
 import RegulatorDashboard from '../views/dashboard/Regulator.vue'
 // import AdminDashboard from '../views/dashboard/Admin.vue'
+import FarmerLayout from '../layout/FarmerLayout.vue'
+import FarmManagement from '../views/farmer/base/FarmManagement.vue'
+import PondManagement from '../views/farmer/base/PondManagement.vue'
+import SupplierManagement from '../views/farmer/base/SupplierManagement.vue'
+import PurchaseBatchManagement from '../views/farmer/base/PurchaseBatchManagement.vue'
 
 const routes = [
   { 
@@ -17,10 +22,43 @@ const routes = [
     name: 'Login',
     component: Login 
   },
-  { 
-    path: '/dashboard/farmer', 
-    name: 'FarmerDashboard',
-    component: FarmerDashboard 
+   {
+    path: '/farmer',
+    component: FarmerLayout,
+    redirect: '/farmer/dashboard', // 默认重定向到工作台
+    children: [
+      { 
+        path: 'dashboard', 
+        name: 'FarmerDashboard',
+        component: FarmerDashboard,
+        meta: { title: '工作台概览' }
+      },
+      {
+        path: 'base/farm',
+        name: 'FarmManagement',
+        component: FarmManagement,
+        meta: { title: '我的养殖场' }
+      },
+       {
+        path: 'base/pond',
+        name: 'PondManagement',
+        component: PondManagement,
+        meta: { title: '我的鱼塘' }
+      },
+      {
+        path: 'base/supplier',
+        name: 'SupplierManagement',
+        component: SupplierManagement,
+        meta: { title: '我的供应商' }
+      },
+      {
+        path: 'base/purchase',
+        name: 'PurchaseBatchManagement',
+        component: PurchaseBatchManagement,
+        meta: { title: '我的采购批次' }
+      }
+      
+    ]
   },
   { 
     path: '/dashboard/regulator', 
@@ -36,12 +74,13 @@ const router = createRouter({
 })
 
 // 简单的路由守卫拦截
+// Token 存储在 HttpOnly Cookie 中，前端无法读取
+// 因此通过检查 sessionStorage 中的用户信息来判断登录状态
 router.beforeEach((to, from, next) => {
-  const token = sessionStorage.getItem('aqua_token')
   const userStr = sessionStorage.getItem('aqua_user')
   
-  // 如果去 dashboard 但没 token，打回入口
-  if (to.path.startsWith('/dashboard') && (!token || !userStr)) {
+  // 如果去 dashboard 但没有用户信息（说明未登录），打回入口
+  if (to.path.startsWith('/dashboard') && !userStr) {
     next('/')
   } else {
     next()
