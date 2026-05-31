@@ -6,9 +6,9 @@
       
       <!-- 动态切换的背景图 -->
       <div class="absolute inset-0 bg-slate-900">
-         <img src="/farmer.png" class="absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ease-in-out" :class="currentRole === 'farmer' ? 'opacity-100' : 'opacity-0'" alt="生产与示范端背景" />
-         <img src="/regulator.png" class="absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ease-in-out" :class="currentRole === 'regulator' ? 'opacity-100' : 'opacity-0'" alt="科研与监管端背景" />
-         <img src="/admin.png" class="absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ease-in-out" :class="currentRole === 'admin' ? 'opacity-100' : 'opacity-0'" alt="中枢与运维端背景" />
+         <img src="/farmer.png" @contextmenu.prevent draggable="false" class="absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ease-in-out" :class="currentRole === 'farmer' ? 'opacity-100' : 'opacity-0'" alt="生产与示范端背景" />
+         <img src="/regulator.png" @contextmenu.prevent draggable="false" class="absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ease-in-out" :class="currentRole === 'regulator' ? 'opacity-100' : 'opacity-0'" alt="科研与监管端背景" />
+         <img src="/admin.png" @contextmenu.prevent draggable="false" class="absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ease-in-out" :class="currentRole === 'admin' ? 'opacity-100' : 'opacity-0'" alt="中枢与运维端背景" />
       </div>
 
       <!-- 科技感遮罩层 -->

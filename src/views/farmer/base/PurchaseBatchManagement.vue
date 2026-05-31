@@ -14,6 +14,23 @@
 
     <!-- 正常业务页面 -->
     <div v-else class="space-y-4">
+
+      <!-- 当前操作场区高亮提示牌 -->
+      <div class="bg-gradient-to-r from-emerald-50 to-teal-50 px-5 py-3.5 rounded-2xl border border-emerald-100 flex items-center justify-between shadow-sm">
+        <div class="flex items-center gap-3">
+          <div class="p-1.5 bg-emerald-100 rounded-lg">
+            <Home class="w-5 h-5 text-emerald-600" />
+          </div>
+          <span class="text-sm text-emerald-800">
+            当前工作空间：<strong class="text-emerald-700 text-base mx-1 tracking-wide">{{ currentFarmName }}</strong>
+            <span class="text-xs text-emerald-600/70 ml-2 hidden md:inline">本页所有数据与操作均已隔离，仅对本场区生效。</span>
+          </span>
+        </div>
+        <el-button link type="primary" class="!text-emerald-600 hover:!text-emerald-800 text-xs font-bold" @click="$router.push('/farmer/base/farm')">
+          <RefreshCw class="w-3 h-3 mr-1" /> 切换场区
+        </el-button>
+      </div>
+
       <!-- 搜索区 -->
       <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex justify-between items-center">
         <el-form :inline="true" :model="queryParams" class="!-mb-4">
@@ -46,6 +63,11 @@
           <el-table-column label="溯源批次号" prop="batchNo" min-width="160">
             <template #default="scope">
               <span class="font-mono font-bold text-slate-700 bg-slate-100 px-2 py-1 rounded">{{ scope.row.batchNo }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="苗种品种" prop="seedlingName" min-width="120">
+            <template #default="scope">
+              <el-tag effect="plain" type="info" round>{{ scope.row.seedlingName || '未指定' }}</el-tag>
             </template>
           </el-table-column>
           <el-table-column label="供应商" prop="supplierName" min-width="150" show-overflow-tooltip >
@@ -124,6 +146,12 @@
           </el-select>
         </el-form-item>
 
+        <el-form-item label="苗种品种" prop="seedlingId">
+          <el-select v-model="form.seedlingId" placeholder="请选择采购苗种品种" filterable class="!w-full">
+            <el-option v-for="item in seedlingOptions" :key="item.id" :label="item.categoryName" :value="item.id" />
+          </el-select>
+        </el-form-item>
+
         <!-- 单位与密度联动计算区域 -->
         <div class="grid grid-cols-2 gap-2">
           <el-form-item label="包装单位" prop="purchaseUnit">
@@ -179,9 +207,10 @@ import { ref, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Home, Search, RefreshCw, Truck, AlertCircle } from 'lucide-vue-next'
 // TODO: 替换为实际 API 导入路径
-import { getPurchasePage, addPurchase, updatePurchase, delPurchase, getSupplierList} from '@/api/base'
+import { getPurchasePage, addPurchase, updatePurchase, delPurchase, getSupplierList, getSeedlingList } from '@/api/base'
 
 const currentFarmId = ref(sessionStorage.getItem('current_farm_id'))
+const currentFarmName = ref(sessionStorage.getItem('current_farm_name') || '未命名场区')
 
 // 表格数据
 const tableData = ref([])
@@ -207,6 +236,7 @@ const form = ref({
   batchNo: '',
   purchaseDate: '',
   supplierId: null,
+  seedlingId: null,
   purchaseUnit: '袋',
   unitQty: 1,
   densityPerUnit: 2000,
@@ -217,6 +247,9 @@ const form = ref({
 
 // 供应商下拉选项
 const supplierOptions = ref([])
+
+// 苗种品种下拉选项
+const seedlingOptions = ref([])
 
 // 计算属性：预估总数 = 包装数量 × 单位密度
 const computedTotal = computed(() => {
@@ -229,6 +262,7 @@ const computedTotal = computed(() => {
 const rules = {
   purchaseDate: [{ required: true, message: '请选择入库日期', trigger: 'change' }],
   supplierId: [{ required: true, message: '请选择供应商', trigger: 'change' }],
+  seedlingId: [{ required: true, message: '请选择苗种品种', trigger: 'change' }],
   purchaseUnit: [{ required: true, message: '请选择包装单位', trigger: 'change' }],
   unitQty: [{ required: true, message: '请输入包装数量', trigger: 'blur' }],
   densityPerUnit: [{ required: true, message: '请输入单位密度', trigger: 'blur' }],
@@ -242,6 +276,7 @@ onMounted(() => {
   if (currentFarmId.value) {
     getList()
     loadSuppliers()
+    loadSeedlings()
   }
 })
 
@@ -250,6 +285,16 @@ const loadSuppliers = async () => {
   try {
     const res = await getSupplierList()
     if (res.code === 200) supplierOptions.value = res.data
+  } catch {
+    // ignore
+  }
+}
+
+// 加载苗种品种列表
+const loadSeedlings = async () => {
+  try {
+    const res = await getSeedlingList()
+    if (res.code === 200) seedlingOptions.value = res.data
   } catch {
     // ignore
   }
@@ -289,6 +334,7 @@ const handleAdd = () => {
     farmId: currentFarmId.value,
     purchaseDate: '',
     supplierId: null,
+    seedlingId: null,
     purchaseUnit: '袋',
     unitQty: 1,
     densityPerUnit: 2000,

@@ -27,3 +27,18 @@ export const addPurchase = (data: any) => request({ url: '/base/purchase-batch',
 export const updatePurchase = (id: string | number, data: any) => request({ url: `/base/purchase-batch/${id}`, method: 'put', data })
 // RESTful: DELETE带ID列表
 export const delPurchase = (ids: string | number) => request({ url: `/base/purchase-batch/${ids}`, method: 'delete' })
+
+// ==================== 苗种字典管理 ====================
+export const getSeedlingPage = (params: Record<string, any>) => request({ url: '/base/seedling-dict/list', method: 'get', params })
+export const getSeedlingList = () => request({ url: '/base/seedling-dict/all', method: 'get' })
+export const getSeedlingById = (id: string | number) => request({ url: `/base/seedling-dict/${id}`, method: 'get' })
+export const addSeedling = (data: any) => request({ url: '/base/seedling-dict', method: 'post', data })
+export const updateSeedling = (id: string | number, data: any) => request({ url: `/base/seedling-dict/${id}`, method: 'put', data })
+export const delSeedling = (ids: string | number) => request({ url: `/base/seedling-dict/${ids}`, method: 'delete' })
+
+// ==================== 投放登记管理 ====================
+export const getStockingPage = (params: Record<string, any>) => request({ url: '/base/stocking/list', method: 'get', params })
+export const getStockingById = (id: string | number) => request({ url: `/base/stocking/${id}`, method: 'get' })
+export const addStocking = (data: any) => request({ url: '/base/stocking', method: 'post', data })
+export const updateStocking = (id: string | number, data: any) => request({ url: `/base/stocking/${id}`, method: 'put', data })
+export const delStocking = (ids: string | number) => request({ url: `/base/stocking/${ids}`, method: 'delete' })

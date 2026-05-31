@@ -9,6 +9,8 @@ import FarmManagement from '../views/farmer/base/FarmManagement.vue'
 import PondManagement from '../views/farmer/base/PondManagement.vue'
 import SupplierManagement from '../views/farmer/base/SupplierManagement.vue'
 import PurchaseBatchManagement from '../views/farmer/base/PurchaseBatchManagement.vue'
+import SeedlingDictManagement from '../views/farmer/base/SeedlingDictManagement.vue'
+import StockingManagement from '../views/farmer/base/StockingManagement.vue'
 
 const routes = [
   { 
@@ -56,8 +58,19 @@ const routes = [
         name: 'PurchaseBatchManagement',
         component: PurchaseBatchManagement,
         meta: { title: '我的采购批次' }
+      },
+      {
+        path: 'base/seedling',
+        name: 'SeedlingDictManagement',
+        component: SeedlingDictManagement,
+        meta: { title: '我的苗种字典' }
+      },
+      {
+        path: 'lifecycle/stocking',
+        name: 'StockingManagement',
+        component: StockingManagement,
+        meta: { title: '我的放养记录' }
       }
-      
     ]
   },
   { 

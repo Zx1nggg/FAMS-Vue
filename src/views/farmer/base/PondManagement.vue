@@ -15,6 +15,23 @@
 
     <!-- 正常的池塘业务页面 -->
     <div v-else class="space-y-4">
+
+      <!-- 当前操作场区高亮提示牌 -->
+      <div class="bg-gradient-to-r from-emerald-50 to-teal-50 px-5 py-3.5 rounded-2xl border border-emerald-100 flex items-center justify-between shadow-sm">
+        <div class="flex items-center gap-3">
+          <div class="p-1.5 bg-emerald-100 rounded-lg">
+            <Home class="w-5 h-5 text-emerald-600" />
+          </div>
+          <span class="text-sm text-emerald-800">
+            当前工作空间：<strong class="text-emerald-700 text-base mx-1 tracking-wide">{{ currentFarmName }}</strong>
+            <span class="text-xs text-emerald-600/70 ml-2 hidden md:inline">本页所有数据与操作均已隔离，仅对本场区生效。</span>
+          </span>
+        </div>
+        <el-button link type="primary" class="!text-emerald-600 hover:!text-emerald-800 text-xs font-bold" @click="$router.push('/farmer/base/farm')">
+          <RefreshCw class="w-3 h-3 mr-1" /> 切换场区
+        </el-button>
+      </div>
+
       <!-- 搜索区 -->
       <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex justify-between items-center">
         <el-form :inline="true" :model="queryParams" class="!-mb-4">
@@ -91,6 +108,7 @@ import { Plus, Search, RefreshCw, Home } from 'lucide-vue-next'
 import { getPondPage, addPond, updatePond, delPond } from '@/api/base'
 
 const currentFarmId = ref(sessionStorage.getItem('current_farm_id'))
+const currentFarmName = ref(sessionStorage.getItem('current_farm_name') || '未命名场区')
 
 // 表格与查询参数
 const tableData = ref([])

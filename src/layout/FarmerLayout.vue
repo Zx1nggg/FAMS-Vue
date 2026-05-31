@@ -5,7 +5,9 @@
     <aside class="w-64 bg-slate-900 text-slate-300 flex flex-col transition-all duration-300 z-20">
       <!-- Logo 区域 -->
       <div class="h-16 flex items-center px-6 bg-slate-950 border-b border-slate-800 shrink-0">
-        <Fish class="w-6 h-6 text-teal-400 mr-3" />
+        <span class="w-8 h-8 bg-white rounded-full flex items-center justify-center mr-3 shrink-0">
+        <img src="/智渔-logo-removebg.png" alt="智渔FAMS" class="w-full h-full object-contain p-1" />
+        </span>
         <span class="font-bold text-lg text-white tracking-wide">智渔 <span class="text-teal-500">FAMS</span></span>
       </div>
 
@@ -126,7 +128,7 @@ import request from '@/utils/request'
 // 🌟 新增引入 ChevronDown(小箭头), User(个人主页), Settings(设置) 图标
 import { 
   Fish, LayoutDashboard, Home, Box, Users, 
-  Truck, MapPin, Stethoscope, LogOut, ChevronDown, User, Settings
+  Truck, MapPin, Stethoscope, LogOut, ChevronDown, User, Settings ,BookOpen
 } from 'lucide-vue-next'
 
 const router = useRouter()
@@ -139,6 +141,7 @@ const menuGroups = [
       { name: '养殖场管理 (切换)', path: '/farmer/base/farm', icon: Home },
       { name: '池塘资产管理', path: '/farmer/base/pond', icon: Box },
       { name: '供应商名录', path: '/farmer/base/supplier', icon: Users },
+      { name: '苗种字典管理', path: '/farmer/base/seedling', icon: BookOpen },
       { name: '采购入库登记', path: '/farmer/base/purchase', icon: Truck },
     ]
   },

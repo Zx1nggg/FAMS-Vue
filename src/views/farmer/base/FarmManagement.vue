@@ -42,8 +42,9 @@
             class="!rounded-lg !px-4"
             :class="currentFarmId == farm.id ? '!bg-gray-300 !border-none !text-white' : '!bg-teal-50 !text-teal-700 !border-teal-100 hover:!bg-teal-600 hover:!text-white'"
             :disabled="currentFarmId == farm.id"
-            @click="enterFarm(farm.id)"
+            @click="enterFarm(farm)" 
           >
+            <!-- 🌟 注意上面这行：@click="enterFarm(farm)" 传了整个 farm 对象 -->
             {{ currentFarmId == farm.id ? '已在场内' : '进入该场' }} <ArrowRight v-if="currentFarmId != farm.id" class="w-3 h-3 ml-1" />
           </el-button>
         </div>
@@ -101,7 +102,7 @@ const rules = {
 const loadData = async () => {
   loading.value = true
   try {
-    const res = await getFarmPage({ pageNum: 1, pageSize: 100 }) // 这里假设养殖场不多，直接查100条平铺
+    const res = await getFarmPage({ pageNum: 1, pageSize: 100 }) 
     farmList.value = res?.data?.records ?? []
   } finally {
     loading.value = false
@@ -110,11 +111,19 @@ const loadData = async () => {
 
 onMounted(() => { loadData() })
 
-// 核心：进入该场 (切换工作空间)
-const enterFarm = (id) => {
-  sessionStorage.setItem('current_farm_id', String(id))
-  currentFarmId.value = Number(id)
-  ElMessage.success('场区切换成功！')
+// 🌟 核心修改点：接收整个 farm 对象，把名字也存起来
+const enterFarm = (farm) => {
+  // 1. 存 ID (给后端接口查数据用)
+  sessionStorage.setItem('current_farm_id', String(farm.id))
+  currentFarmId.value = Number(farm.id)
+  
+  // 2. 存 Name (给前端其它页面显示提示牌用)
+  sessionStorage.setItem('current_farm_name', farm.farmName)
+  
+  ElMessage.success(`已切换至：${farm.farmName}`)
+  
+  // 3. 这里你用了 window.location.href，这是一个很棒的技巧！
+  // 它可以强制刷新页面，确保全局 Header 和新页面都能立刻读到最新的 sessionStorage
   setTimeout(() => {
     window.location.href = '/farmer/base/pond'
   }, 500)

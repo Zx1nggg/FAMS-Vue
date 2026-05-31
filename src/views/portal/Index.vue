@@ -5,7 +5,7 @@
     <div class="absolute inset-0 z-0 overflow-hidden">
       <div class="absolute inset-0 flex items-center justify-center bg-slate-800">
          <span class="text-slate-500 font-bold tracking-widest text-xl opacity-50">
-          <img src="/background.png" class="w-full h-full object-cover" alt="无人机俯拍图" />
+          <img src="/background.png" @contextmenu.prevent draggable="false" class="w-full h-full object-cover" alt="无人机俯拍图" />
          </span>
       </div>
       
@@ -18,7 +18,7 @@
       <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between text-sm text-slate-200">
         <div class="flex items-center gap-3">
           <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center border border-white/20 overflow-hidden p-0.5">
-            <img src="/华南农业大学-logo.svg" class="w-full h-full object-contain" alt="华农校徽" />
+            <img src="/华南农业大学-logo.svg" @contextmenu.prevent draggable="false" class="w-full h-full object-contain" alt="华农校徽" />
           </div>
           <div>
             <span class="font-bold tracking-widest text-teal-50 text-base block leading-tight">华南农业大学</span>
@@ -46,7 +46,7 @@
         <div class="flex items-center justify-center gap-4 mb-4">
           <!-- 产品Logo占位 (新增) -->
            <div class="w-16 h-16 bg-white rounded-xl flex items-center justify-center border border-white/20 p-1">
-            <img src="/智渔-logo-removebg.png" class="w-full h-full object-contain" alt="智渔logo" />
+            <img src="/智渔-logo-removebg.png" @contextmenu.prevent draggable="false" class="w-full h-full object-contain" alt="智渔logo" />
           </div>
           <h1 class="text-5xl md:text-6xl font-extrabold text-white tracking-tight drop-shadow-lg flex items-center gap-4">
             智渔 <span class="text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-blue-400">FAMS</span>
