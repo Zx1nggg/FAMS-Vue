@@ -42,3 +42,38 @@ export const getStockingById = (id: string | number) => request({ url: `/base/st
 export const addStocking = (data: any) => request({ url: '/base/stocking', method: 'post', data })
 export const updateStocking = (id: string | number, data: any) => request({ url: `/base/stocking/${id}`, method: 'put', data })
 export const delStocking = (ids: string | number) => request({ url: `/base/stocking/${ids}`, method: 'delete' })
+
+// ==================== SOP模板管理 ====================
+export const getSopTemplatePage = (params: Record<string, any>) => request({ url: '/base/sop-template/list', method: 'get', params })
+export const getSopTemplateById = (id: string | number) => request({ url: `/base/sop-template/${id}`, method: 'get' })
+export const addSopTemplate = (data: any) => request({ url: '/base/sop-template', method: 'post', data })
+export const updateSopTemplate = (id: string | number, data: any) => request({ url: `/base/sop-template/${id}`, method: 'put', data })
+export const delSopTemplate = (ids: string | number) => request({ url: `/base/sop-template/${ids}`, method: 'delete' })
+
+// ==================== 日常巡塘台账 ====================
+export const getPatrolLogPage = (params: Record<string, any>) => request({ url: '/lifecycle/patrol-log/list', method: 'get', params })
+export const getPatrolLogById = (id: string | number) => request({ url: `/lifecycle/patrol-log/${id}`, method: 'get' })
+export const addPatrolLog = (data: any) => request({ url: '/lifecycle/patrol-log', method: 'post', data })
+export const updatePatrolLog = (id: string | number, data: any) => request({ url: `/lifecycle/patrol-log/${id}`, method: 'put', data })
+export const delPatrolLog = (ids: string | number) => request({ url: `/lifecycle/patrol-log/${ids}`, method: 'delete' })
+
+// ==================== SOP待办任务 ====================
+export const getPondTaskPage = (params: Record<string, any>) => request({ url: '/lifecycle/pond-task/list', method: 'get', params })
+export const getPondTaskById = (id: string | number) => request({ url: `/lifecycle/pond-task/${id}`, method: 'get' })
+export const checkOffPondTask = (id: string | number) => request({ url: `/lifecycle/pond-task/${id}/check-off`, method: 'put' })
+export const batchCheckOffPondTask = (ids: number[]) => request({ url: '/lifecycle/pond-task/batch-check-off', method: 'put', data: ids })
+export const delPondTask = (ids: string | number) => request({ url: `/lifecycle/pond-task/${ids}`, method: 'delete' })
+
+// ==================== 投喂换水日志 ====================
+export const getPondFeedLogPage = (params: Record<string, any>) => request({ url: '/log/pond-feed-log/list', method: 'get', params })
+export const getPondFeedLogById = (id: string | number) => request({ url: `/log/pond-feed-log/${id}`, method: 'get' })
+export const addPondFeedLog = (data: any) => request({ url: '/log/pond-feed-log', method: 'post', data })
+export const updatePondFeedLog = (id: string | number, data: any) => request({ url: `/log/pond-feed-log/${id}`, method: 'put', data })
+export const delPondFeedLog = (ids: string | number) => request({ url: `/log/pond-feed-log/${ids}`, method: 'delete' })
+
+// ==================== 生长死亡抽测记录 ====================
+export const getBatchGrowthLogPage = (params: Record<string, any>) => request({ url: '/lifecycle/batch-growth-log/list', method: 'get', params })
+export const getBatchGrowthLogById = (id: string | number) => request({ url: `/lifecycle/batch-growth-log/${id}`, method: 'get' })
+export const addBatchGrowthLog = (data: any) => request({ url: '/lifecycle/batch-growth-log', method: 'post', data })
+export const updateBatchGrowthLog = (id: string | number, data: any) => request({ url: `/lifecycle/batch-growth-log/${id}`, method: 'put', data })
+export const delBatchGrowthLog = (ids: string | number) => request({ url: `/lifecycle/batch-growth-log/${ids}`, method: 'delete' })

@@ -82,19 +82,19 @@
           <h2 class="text-lg font-bold text-gray-800 mb-4">核心业务流转</h2>
           <div class="grid grid-cols-2 gap-3">
             <!-- 🌟 核心：激活路由跳转 -->
-            <button @click="router.push('/base/pond')" class="flex flex-col items-center justify-center p-4 bg-gray-50 hover:bg-indigo-50 hover:text-indigo-700 rounded-xl transition-colors border border-transparent hover:border-indigo-100 text-gray-600">
+            <button @click="router.push('/farmer/base/pond')" class="flex flex-col items-center justify-center p-4 bg-gray-50 hover:bg-indigo-50 hover:text-indigo-700 rounded-xl transition-colors border border-transparent hover:border-indigo-100 text-gray-600">
               <Box class="w-6 h-6 mb-2" />
               <span class="text-sm font-medium">1. 池塘管理</span>
             </button>
-            <button @click="router.push('/lifecycle/purchase')" class="flex flex-col items-center justify-center p-4 bg-gray-50 hover:bg-teal-50 hover:text-teal-700 rounded-xl transition-colors border border-transparent hover:border-teal-100 text-gray-600">
+            <button @click="router.push('/farmer/base/purchase')" class="flex flex-col items-center justify-center p-4 bg-gray-50 hover:bg-teal-50 hover:text-teal-700 rounded-xl transition-colors border border-transparent hover:border-teal-100 text-gray-600">
               <Truck class="w-6 h-6 mb-2" />
               <span class="text-sm font-medium">2. 采购入库</span>
             </button>
-            <button @click="router.push('/lifecycle/stocking')" class="flex flex-col items-center justify-center p-4 bg-gray-50 hover:bg-emerald-50 hover:text-emerald-700 rounded-xl transition-colors border border-transparent hover:border-emerald-100 text-gray-600">
+            <button @click="router.push('/farmer/lifecycle/stocking')" class="flex flex-col items-center justify-center p-4 bg-gray-50 hover:bg-emerald-50 hover:text-emerald-700 rounded-xl transition-colors border border-transparent hover:border-emerald-100 text-gray-600">
               <MapPin class="w-6 h-6 mb-2" />
               <span class="text-sm font-medium">3. 投放登记</span>
             </button>
-            <button @click="router.push('/log/feed')" class="flex flex-col items-center justify-center p-4 bg-gray-50 hover:bg-blue-50 hover:text-blue-700 rounded-xl transition-colors border border-transparent hover:border-blue-100 text-gray-600">
+            <button @click="router.push('/farmer/lifecycle/patrol')" class="flex flex-col items-center justify-center p-4 bg-gray-50 hover:bg-blue-50 hover:text-blue-700 rounded-xl transition-colors border border-transparent hover:border-blue-100 text-gray-600">
               <Stethoscope class="w-6 h-6 mb-2" />
               <span class="text-sm font-medium">4. 日常巡塘</span>
             </button>

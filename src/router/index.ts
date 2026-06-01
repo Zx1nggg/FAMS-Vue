@@ -11,6 +11,7 @@ import SupplierManagement from '../views/farmer/base/SupplierManagement.vue'
 import PurchaseBatchManagement from '../views/farmer/base/PurchaseBatchManagement.vue'
 import SeedlingDictManagement from '../views/farmer/base/SeedlingDictManagement.vue'
 import StockingManagement from '../views/farmer/base/StockingManagement.vue'
+import DailyPatrol from '../views/farmer/lifecycle/DailyPatrol.vue'
 
 const routes = [
   { 
@@ -39,25 +40,25 @@ const routes = [
         path: 'base/farm',
         name: 'FarmManagement',
         component: FarmManagement,
-        meta: { title: '我的养殖场' }
+        meta: { title: '我的养殖场区' }
       },
        {
         path: 'base/pond',
         name: 'PondManagement',
         component: PondManagement,
-        meta: { title: '我的鱼塘' }
+        meta: { title: '我的池塘' }
       },
       {
         path: 'base/supplier',
         name: 'SupplierManagement',
         component: SupplierManagement,
-        meta: { title: '我的供应商' }
+        meta: { title: '供应商管理' }
       },
       {
         path: 'base/purchase',
         name: 'PurchaseBatchManagement',
         component: PurchaseBatchManagement,
-        meta: { title: '我的采购批次' }
+        meta: { title: '采购批次管理' }
       },
       {
         path: 'base/seedling',
@@ -69,7 +70,13 @@ const routes = [
         path: 'lifecycle/stocking',
         name: 'StockingManagement',
         component: StockingManagement,
-        meta: { title: '我的放养记录' }
+        meta: { title: '苗种投放登记' }
+      },
+      {
+        path: 'lifecycle/patrol',
+        name: 'DailyPatrol',
+        component: DailyPatrol,
+        meta: { title: '日常巡塘台账' }
       }
     ]
   },

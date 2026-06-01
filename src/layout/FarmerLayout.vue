@@ -149,7 +149,7 @@ const menuGroups = [
     title: '核心业务流转',
     items: [
       { name: '苗种投放关联', path: '/farmer/lifecycle/stocking', icon: MapPin },
-      { name: '日常巡塘台账', path: '/farmer/log/feed', icon: Stethoscope },
+      { name: '日常巡塘台账', path: '/farmer/lifecycle/patrol', icon: Stethoscope },
     ]
   }
 ]
@@ -162,8 +162,8 @@ onMounted(() => {
   const userStr = sessionStorage.getItem('aqua_user')
   if (userStr) {
     const data = JSON.parse(userStr)
-    currentUser.value = data.user || { name: '游客', role: 'FARMER' }
-    
+    currentUser.value = data || { name: '游客', role: 'FARMER' }
+
     // 找出当前选中的农场名字
     const savedFarmId = sessionStorage.getItem('current_farm_id')
     if (savedFarmId && data.farms) {
