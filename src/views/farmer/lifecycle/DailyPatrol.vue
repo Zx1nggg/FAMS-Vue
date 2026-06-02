@@ -1,13 +1,13 @@
 <template>
   <div class="h-full flex flex-col font-sans">
     
-    <!-- 🛑 防呆提示：未选择农场时拦截 -->
+    <!-- 防呆提示：未选择农场时拦截 -->
     <div v-if="!currentFarmId" class="flex-1 flex flex-col items-center justify-center bg-white rounded-2xl shadow-sm border border-gray-100">
-      <div class="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mb-4">
-        <Home class="w-10 h-10 text-blue-500" />
+      <div class="w-20 h-20 bg-amber-50 rounded-full flex items-center justify-center mb-4">
+        <Home class="w-10 h-10 text-amber-500" />
       </div>
       <h2 class="text-xl font-bold text-gray-800 mb-2">未选择操作场区</h2>
-      <p class="text-gray-500 mb-6">进行巡塘登记前，请先指定一个具体的养殖场区。</p>
+      <p class="text-gray-500 mb-6">在进行巡塘登记前，请先指定一个具体的养殖场区。</p>
       <el-button type="primary" size="large" class="!bg-teal-600 !border-none hover:!bg-teal-700 !rounded-xl" @click="$router.push('/farmer/base/farm')">
         去选择养殖场
       </el-button>
@@ -53,8 +53,8 @@
               </el-form-item>
               
               <el-form-item label="苗种批次" prop="batchNo">
-                <el-select v-model="patrolForm.batchNo" placeholder="选择关联批次(可选)" class="!w-full" filterable clearable>
-                  <el-option v-for="batch in batchOptions" :key="batch.batchNo" :label="batch.batchNo" :value="batch.batchNo">
+                <el-select v-model="patrolForm.batchNo" placeholder="先选池塘后自动加载批次" class="!w-full" filterable clearable :disabled="!patrolForm.pondId">
+                  <el-option v-for="batch in stockBatches" :key="batch.batchNo" :label="batch.batchNo" :value="batch.batchNo">
                     <span style="float: left">{{ batch.batchNo }}</span>
                     <span style="float: right; color: #8492a6; font-size: 13px">{{ batch.seedlingName || '未知' }}</span>
                   </el-option>
@@ -306,7 +306,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, reactive } from 'vue'
+import { ref, computed, onMounted, reactive, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { 
   Home, RefreshCw, ThermometerSun, ClipboardCheck, ClipboardList, 
@@ -314,8 +314,8 @@ import {
 } from 'lucide-vue-next'
 
 // 导入主记录与SOP API
-import { 
-  getPondPage, getPurchasePage, 
+import {
+  getPondPage, getStockingPage,
   getPatrolLogPage, addPatrolLog, delPatrolLog,
   getPondTaskPage, checkOffPondTask, batchCheckOffPondTask,
   // 🌟 新增导入展开行的子业务 API
@@ -329,7 +329,7 @@ const currentFarmName = ref(sessionStorage.getItem('current_farm_name') || '未�
 
 // === 字典与下拉数据 ===
 const pondOptions = ref([])
-const batchOptions = ref([])
+const stockBatches = ref([])  // 当前选中池塘已投放的批次 (batchNo + seedlingName)
 
 // === 区域A：新增巡塘表单 ===
 const patrolFormRef = ref(null)
@@ -357,6 +357,22 @@ const rules = {
   patrolTime: [{ required: true, message: '请选择巡塘时间', trigger: 'change' }],
   waterTemp: [{ required: true, message: '请输入水温', trigger: 'blur' }]
 }
+
+// 选中池塘后动态拉取其投放记录，批次下拉仅显示该池塘已有的批次
+watch(() => patrolForm.value.pondId, async (newPondId) => {
+  patrolForm.value.batchNo = ''
+  stockBatches.value = []
+  if (!newPondId) return
+  try {
+    const res = await getStockingPage({ pageNum: 1, pageSize: 100, pondId: newPondId })
+    if (res.code === 200 && res.data?.records) {
+      const seen = new Set()
+      stockBatches.value = res.data.records
+        .filter(r => r.batchNo && !seen.has(r.batchNo) && seen.add(r.batchNo))
+        .map(r => ({ batchNo: r.batchNo, seedlingName: r.seedlingName || '未知' }))
+    }
+  } catch (e) { /* ignore */ }
+})
 
 // 重置主巡塘表单到初始状态并重置校验（若可用）
 const resetPatrolForm = () => {
@@ -414,14 +430,11 @@ onMounted(() => {
   }
 })
 
-// 加载池塘与批次下拉列表
+// 加载池塘下拉列表
 const loadDictionaries = async () => {
   try {
     const pondRes = await getPondPage({ pageNum: 1, pageSize: 100, farmId: currentFarmId.value })
     if (pondRes.code === 200) pondOptions.value = pondRes.data.records
-    
-    const batchRes = await getPurchasePage({ pageNum: 1, pageSize: 200, farmId: currentFarmId.value })
-    if (batchRes.code === 200) batchOptions.value = batchRes.data.records
   } catch (e) {
     console.error('辅助字典加载失败', e)
   }

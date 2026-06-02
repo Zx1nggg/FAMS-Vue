@@ -77,3 +77,12 @@ export const getBatchGrowthLogById = (id: string | number) => request({ url: `/l
 export const addBatchGrowthLog = (data: any) => request({ url: '/lifecycle/batch-growth-log', method: 'post', data })
 export const updateBatchGrowthLog = (id: string | number, data: any) => request({ url: `/lifecycle/batch-growth-log/${id}`, method: 'put', data })
 export const delBatchGrowthLog = (ids: string | number) => request({ url: `/lifecycle/batch-growth-log/${ids}`, method: 'delete' })
+
+// ==================== IoT 传感器数据 ====================
+export const getLatestSensorData = (pondId: number) => request({ url: '/iot/sensor-data/latest', method: 'get', params: { pondId } })
+export const getLatestAllSensorData = (farmId?: number) => request({ url: '/iot/sensor-data/latest/all', method: 'get', params: { farmId } })
+export const getSensorDataHistory = (pondId: number, hours?: number) => request({ url: '/iot/sensor-data/history', method: 'get', params: { pondId, hours: hours || 24 } })
+
+// ==================== 告警记录 ====================
+export const getAlarmPage = (params: Record<string, any>) => request({ url: '/log/alarm-record/list', method: 'get', params })
+export const handleAlarm = (id: string | number) => request({ url: `/log/alarm-record/${id}/handle`, method: 'put' })

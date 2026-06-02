@@ -77,6 +77,12 @@ const routes = [
         name: 'DailyPatrol',
         component: DailyPatrol,
         meta: { title: '日常巡塘台账' }
+      },
+      {
+        path: 'lifecycle/overview',
+        name: 'PondOverview',
+        component: () => import('../views/farmer/lifecycle/PondOverview.vue'),
+        meta: { title: '池塘实时概览' }
       }
     ]
   },

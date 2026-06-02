@@ -3,11 +3,11 @@
     
     <!-- 防呆提示：未选择农场时拦截 -->
     <div v-if="!currentFarmId" class="flex-1 flex flex-col items-center justify-center bg-white rounded-2xl shadow-sm border border-gray-100">
-      <div class="w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center mb-4">
-        <MapPin class="w-10 h-10 text-emerald-500" />
+      <div class="w-20 h-20 bg-amber-50 rounded-full flex items-center justify-center mb-4">
+        <Home class="w-10 h-10 text-amber-500" />
       </div>
       <h2 class="text-xl font-bold text-gray-800 mb-2">未选择操作场区</h2>
-      <p class="text-gray-500 mb-6">进行苗种投放前，请先指定一个具体的养殖场区。</p>
+      <p class="text-gray-500 mb-6">在进行苗种投放前，请先指定一个具体的养殖场区。</p>
       <el-button type="primary" size="large" class="!bg-teal-600 !border-none hover:!bg-teal-700 !rounded-xl" @click="$router.push('/farmer/base/farm')">
         去选择养殖场
       </el-button>
@@ -43,7 +43,7 @@
           </el-form-item>
           <el-form-item label="苗种批次">
             <el-select v-model="queryParams.batchId" placeholder="选择批次过滤" clearable class="!w-48" @change="handleQuery">
-              <el-option v-for="batch in batchOptions" :key="batch.id" :label="batch.batchNo" :value="batch.id" />
+              <el-option v-for="batch in allBatches" :key="batch.id" :label="batch.batchNo" :value="batch.id" />
             </el-select>
           </el-form-item>
           <el-form-item>
@@ -146,8 +146,8 @@
         </el-form-item>
 
         <el-form-item label="苗种批次" prop="batchId">
-          <el-select v-model="form.batchId" placeholder="请选择要下塘的采购批次" class="!w-full" filterable>
-            <el-option v-for="batch in batchOptions" :key="batch.id" :label="batch.batchNo" :value="batch.id">
+          <el-select v-model="form.batchId" placeholder="请选择要下塘的采购批次" class="!w-full" filterable :disabled="!form.pondId">
+            <el-option v-for="batch in availableBatches" :key="batch.id" :label="batch.batchNo" :value="batch.id">
               <span style="float: left">
                 {{ batch.batchNo }} 
                 <!-- 🌟 优化下拉框展示：加上品种名称，避免死记批次号 -->
@@ -212,7 +212,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Search, RefreshCw, MapPin, Box, Home } from 'lucide-vue-next'
 import { getStockingPage, addStocking, updateStocking, delStocking, getPondPage, getPurchasePage } from '@/api/base'
@@ -230,7 +230,21 @@ const queryParams = ref({ pageNum: 1, pageSize: 10, farmId: currentFarmId.value,
 
 // 辅助下拉框数据
 const pondOptions = ref([])
-const batchOptions = ref([]) 
+const allBatches = ref([])  // 原始全部批次（搜索用）
+
+// 表单中可选的批次：动态隔离 — 只显示与所选池塘同养殖场的批次，且排除待检疫/已结算
+const availableBatches = computed(() => {
+  if (!form.value.pondId) return allBatches.value
+  const selectedPond = pondOptions.value.find(p => p.id === form.value.pondId)
+  if (!selectedPond || selectedPond.farmId == null) return allBatches.value
+  return allBatches.value.filter(b => {
+    // 隔离：批次必须与池塘同养殖场
+    if (b.farmId !== selectedPond.farmId) return false
+    // 不可投放的状态：0=待检疫  3=已出库结算
+    if (b.batchStatus === 0 || b.batchStatus === 3) return false
+    return true
+  })
+})
 
 // 弹窗相关
 const dialogVisible = ref(false)
@@ -248,7 +262,7 @@ const rules = {
 // 计算当前选中的批次对象
 const selectedBatch = computed(() => {
   if (!form.value.batchId) return null
-  return batchOptions.value.find(b => b.id === form.value.batchId) || null
+  return allBatches.value.find(b => b.id === form.value.batchId) || null
 })
 
 // 根据选中的批次密度和输入的件数，弹窗内动态预览总尾数 (只做前端预览，后端会重算)
@@ -256,6 +270,11 @@ const calculatedTotal = computed(() => {
   const units = form.value.stockedUnits || 0
   const density = selectedBatch.value?.densityPerUnit || 0
   return units * density
+})
+
+// 切换池塘时清空批次选择，防止跨养殖场残留
+watch(() => form.value.pondId, () => {
+  form.value.batchId = undefined
 })
 
 // 初始化
@@ -274,7 +293,7 @@ const loadAuxiliaryOptions = async () => {
     
     const batchRes = await getPurchasePage({ pageNum: 1, pageSize: 200, farmId: currentFarmId.value })
     if (batchRes.code === 200) {
-      batchOptions.value = batchRes.data.records
+      allBatches.value = batchRes.data.records
     }
   } catch (error) {
     console.error('辅助下拉字典数据加载失败', error)

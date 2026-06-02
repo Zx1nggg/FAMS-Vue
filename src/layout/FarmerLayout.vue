@@ -127,8 +127,8 @@ import { useRouter } from 'vue-router'
 import request from '@/utils/request'
 // 🌟 新增引入 ChevronDown(小箭头), User(个人主页), Settings(设置) 图标
 import { 
-  Fish, LayoutDashboard, Home, Box, Users, 
-  Truck, MapPin, Stethoscope, LogOut, ChevronDown, User, Settings ,BookOpen
+  Fish, LayoutDashboard, Home, Box, Users,
+  Truck, MapPin, Stethoscope, LogOut, ChevronDown, User, Settings, BookOpen, LayoutGrid
 } from 'lucide-vue-next'
 
 const router = useRouter()
@@ -150,6 +150,7 @@ const menuGroups = [
     items: [
       { name: '苗种投放关联', path: '/farmer/lifecycle/stocking', icon: MapPin },
       { name: '日常巡塘台账', path: '/farmer/lifecycle/patrol', icon: Stethoscope },
+      { name: '池塘实时概览', path: '/farmer/lifecycle/overview', icon: LayoutGrid },
     ]
   }
 ]
