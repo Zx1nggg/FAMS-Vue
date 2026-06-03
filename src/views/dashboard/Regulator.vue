@@ -89,24 +89,8 @@
             </div>
           </div>
           
-          <!-- 地图/监控占位区 -->
-          <div class="relative w-full h-[500px] bg-slate-200 flex items-center justify-center overflow-hidden">
-            <!-- 网格线背景增加科技地图感 -->
-            <div class="absolute inset-0" style="background-image: radial-gradient(#cbd5e1 1px, transparent 1px); background-size: 20px 20px;"></div>
-            
-            <!-- 真实图片加载位 -->
-            <div class="relative z-10 bg-white/90 backdrop-blur border border-slate-300 px-6 py-4 rounded shadow-sm flex flex-col items-center">
-              <Camera class="w-8 h-8 text-slate-400 mb-2" />
-              <span class="text-slate-600 font-bold tracking-wide"></span>
-              <span class="text-xs text-slate-400 mt-1">此处可在开发时替换为真实百度/高德地图 API 或无人机航拍全景图</span>
-            </div>
-
-            <!-- 模拟地图上的预警标 -->
-            <div class="absolute top-1/4 left-1/3 flex flex-col items-center animate-bounce">
-              <div class="w-4 h-4 bg-red-500 rounded-full border-2 border-white shadow-lg"></div>
-              <div class="mt-1 bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded shadow">高明第三养殖场: 缺氧</div>
-            </div>
-          </div>
+          <!-- GIS 地图监控：ECharts + DataV GeoJSON 全国→省级下钻 -->
+          <GisMap />
         </div>
 
         <!-- 右侧：功能与告警面板 -->
@@ -176,10 +160,11 @@
 
 <script setup>
 import { useRouter } from 'vue-router'
-import { 
-  ShieldCheck, LogOut, Search, AlertOctagon, 
-  Map, Building2, Fish, FileCheck, AlertTriangle, Camera
+import {
+  ShieldCheck, LogOut, Search, AlertOctagon,
+  Map, Building2, Fish, FileCheck, AlertTriangle
 } from 'lucide-vue-next'
+import GisMap from '@/components/GisMap.vue'
 
 const router = useRouter()
 

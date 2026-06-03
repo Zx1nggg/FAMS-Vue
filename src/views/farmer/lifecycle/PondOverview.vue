@@ -401,7 +401,7 @@ const loadBatchStats = async () => {
       batchStats.value.todayDone = tasks.filter(t => t.status === 1).length
       batchStats.value.todayPending = tasks.filter(t => t.status === 0).length
     }
-  } catch (e) { /* ignore */ }
+  } catch (e) { console.error('加载批次统计失败', e) }
 }
 
 const loadAllPondIoT = async () => {
@@ -419,7 +419,7 @@ const loadAllPondIoT = async () => {
       }
       allPondIoT.value = map
     }
-  } catch (e) { /* ignore */ }
+  } catch (e) { console.error('加载池塘IoT数据失败', e) }
 }
 
 const loadPatrolAndAlarm = async () => {
@@ -444,7 +444,7 @@ const loadPatrolAndAlarm = async () => {
     if (alarmRes.code === 200 && alarmRes.data) {
       batchStats.value.alarmCount = alarmRes.data.total || 0
     }
-  } catch (e) { /* ignore */ }
+  } catch (e) { console.error('加载告警数据失败', e) }
 }
 
 onMounted(() => { loadAll() })
