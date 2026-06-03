@@ -32,14 +32,14 @@
 
     <!-- 正常业务区 -->
     <div v-else>
-    <!-- 池塘选择器 + 最后更新时间 -->
+    <!-- 池塘选择器 + 批次选择器 + 最后更新时间 -->
     <div class="flex items-center justify-between mb-4">
       <div class="flex items-center gap-3">
         <span class="text-sm font-medium text-gray-600">监测池塘：</span>
         <el-select
           v-model="selectedPondId"
           placeholder="选择池塘"
-          class="!w-48"
+          class="!w-40"
           @change="onPondChange"
           :loading="pondsLoading"
         >
@@ -48,6 +48,22 @@
             :key="pond.id"
             :label="pond.pondName"
             :value="pond.id"
+          />
+        </el-select>
+        <span class="text-sm font-medium text-gray-600 ml-2">生长批次：</span>
+        <el-select
+          v-model="selectedBatchNo"
+          placeholder="选择批次"
+          class="!w-48"
+          @change="onBatchChange"
+          :loading="batchesLoading"
+          :disabled="!selectedPondId"
+        >
+          <el-option
+            v-for="b in batchList"
+            :key="b.batchNo"
+            :label="`${b.batchNo}（${b.seedlingName || ''}）`"
+            :value="b.batchNo"
           />
         </el-select>
       </div>
@@ -169,14 +185,36 @@
           </div>
         </div>
 
-        <!-- 原有：成活率曲线（暂时保留硬编码，待 BatchGrowthLog 模块完成后改造） -->
+        <!-- 批次生长与成活率曲线 -->
         <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
           <div class="flex items-center justify-between mb-6">
             <h2 class="text-lg font-bold text-gray-800 flex items-center gap-2">
               <TrendingUp class="w-5 h-5 text-teal-600" /> 批次生长与成活率追踪
             </h2>
+            <span v-if="growthChartData" class="text-xs text-gray-400">
+              {{ growthChartData.seedlingName || '' }} · 投放 {{ growthChartData.initialQuantity }} 尾
+            </span>
           </div>
-          <div ref="chartRef" class="w-full h-80"></div>
+          <!-- 有数据 -->
+          <div v-if="growthChartData && growthChartData.dataPoints && growthChartData.dataPoints.length > 0"
+               ref="chartRef" class="w-full h-80"></div>
+          <!-- 加载中 -->
+          <div v-else-if="growthLoading" class="w-full h-80 flex flex-col items-center justify-center text-gray-400">
+            <TrendingUp class="w-12 h-12 mb-3 opacity-30 animate-pulse" />
+            <span class="text-sm">加载生长数据中...</span>
+          </div>
+          <!-- 无批次选中 -->
+          <div v-else-if="!selectedBatchNo" class="w-full h-80 flex flex-col items-center justify-center text-gray-400">
+            <TrendingUp class="w-12 h-12 mb-3 opacity-30" />
+            <span class="text-sm">请先选择生长批次</span>
+            <span class="text-xs mt-1">选择池塘和批次后可查看生长曲线</span>
+          </div>
+          <!-- 无数据 -->
+          <div v-else class="w-full h-80 flex flex-col items-center justify-center text-gray-400">
+            <TrendingUp class="w-12 h-12 mb-3 opacity-30" />
+            <span class="text-sm">暂无生长抽测数据</span>
+            <span class="text-xs mt-1">在巡塘时填写生长抽测记录后生成曲线</span>
+          </div>
         </div>
       </div>
 
@@ -260,7 +298,7 @@ import {
   Thermometer, Waves, Droplet, TrendingUp, TrendingDown, CheckCircle2,
   Minus, AlertTriangle, Activity, Box, Truck, MapPin, Stethoscope, RefreshCw, Home
 } from 'lucide-vue-next'
-import { getLatestSensorData, getLatestAllSensorData, getSensorDataHistory, getAlarmPage, getPondPage } from '@/api/base'
+import { getLatestSensorData, getLatestAllSensorData, getSensorDataHistory, getAlarmPage, getPondPage, getGrowthChart, getStockingPage } from '@/api/base'
 
 const router = useRouter()
 
@@ -284,6 +322,13 @@ const latestData = ref({ waterTemp: null, dissolvedOxygen: null, phValue: null }
 const lastUpdateTime = ref('--')
 const historyData = ref([])
 const alarms = ref([])
+
+// ==================== 生长曲线状态 ====================
+const batchList = ref([])
+const batchesLoading = ref(false)
+const selectedBatchNo = ref(null)
+const growthLoading = ref(false)
+const growthChartData = ref(null)
 
 // ==================== 图表实例 ====================
 const chartRef = ref(null)
@@ -358,6 +403,7 @@ const loadPonds = async () => {
       pondList.value = res.data.records
       if (!selectedPondId.value && pondList.value.length > 0) {
         selectedPondId.value = pondList.value[0].id
+        loadBatches()
         await loadAllData()
       }
     }
@@ -415,30 +461,138 @@ const loadAllData = async () => {
 
 const onPondChange = () => {
   cardsLoading.value = true
+  selectedBatchNo.value = null
+  growthChartData.value = null
+  if (chartInstance) { chartInstance.dispose(); chartInstance = null }
+  loadBatches()
   loadAllData().finally(() => { cardsLoading.value = false })
+}
+
+const onBatchChange = () => {
+  loadGrowthChart()
+}
+
+// ==================== 批次列表 & 生长曲线数据 ====================
+
+const loadBatches = async () => {
+  if (!selectedPondId.value) {
+    batchList.value = []
+    return
+  }
+  batchesLoading.value = true
+  try {
+    const res = await getStockingPage({ pageNum: 1, pageSize: 100, pondId: selectedPondId.value })
+    if (res.code === 200 && res.data?.records) {
+      // 去重 batchNo，保留 seedlingName
+      const seen = new Set()
+      batchList.value = res.data.records.filter(r => {
+        if (!r.batchNo || seen.has(r.batchNo)) return false
+        seen.add(r.batchNo)
+        return true
+      })
+      // 自动选中第一个批次
+      if (batchList.value.length > 0 && !selectedBatchNo.value) {
+        selectedBatchNo.value = batchList.value[0].batchNo
+        loadGrowthChart()
+      }
+    }
+  } catch (e) { /* ignore */ }
+  finally { batchesLoading.value = false }
+}
+
+const loadGrowthChart = async () => {
+  if (!selectedBatchNo.value || !selectedPondId.value) return
+  growthLoading.value = true
+  growthChartData.value = null
+  if (chartInstance) { chartInstance.dispose(); chartInstance = null }
+  try {
+    const res = await getGrowthChart(selectedBatchNo.value, selectedPondId.value)
+    if (res.code === 200 && res.data) {
+      growthChartData.value = res.data
+      await nextTick()
+      renderGrowthChart()
+    }
+  } catch (e) { /* ignore */ }
+  finally { growthLoading.value = false }
 }
 
 // ==================== ECharts ====================
 
-// 生长曲线（保留原有）
-const initGrowthChart = () => {
-  if (!chartRef.value) return
-  chartInstance = echarts.init(chartRef.value)
+// 生长曲线（动态数据）
+const renderGrowthChart = () => {
+  if (!chartRef.value || !growthChartData.value?.dataPoints?.length) return
+  if (!chartInstance) {
+    chartInstance = echarts.init(chartRef.value)
+  }
+
+  const dp = growthChartData.value.dataPoints
+  const weeks = dp.map(d => d.weekLabel)
+  const weights = dp.map(d => d.avgWeight != null ? Number(d.avgWeight) : null)
+  const survivalRates = dp.map(d => d.survivalRate != null ? Number(d.survivalRate) : null)
+
+  // 动态 y 轴范围
+  const maxWeight = Math.max(...weights.filter(w => w != null), 1)
+  const minSurvival = Math.min(...survivalRates.filter(s => s != null), 100)
+  const survivalMin = Math.max(0, Math.floor(minSurvival / 5) * 5 - 5)
+
   const option = {
-    tooltip: { trigger: 'axis', axisPointer: { type: 'cross' } },
+    tooltip: {
+      trigger: 'axis',
+      axisPointer: { type: 'cross' },
+      formatter: function (params) {
+        const week = params[0].axisValue
+        let html = `<strong>${week}</strong><br/>`
+        params.forEach(p => {
+          if (p.value != null) {
+            html += `${p.marker} ${p.seriesName}: ${p.value}${p.seriesName.includes('体重') ? ' g' : ' %'}<br/>`
+          }
+        })
+        return html
+      }
+    },
     legend: { data: ['平均体重 (g)', '存活率 (%)'], bottom: 0 },
     grid: { left: '3%', right: '3%', bottom: '15%', top: '10%', containLabel: true },
-    xAxis: [{ type: 'category', data: ['第1周', '第2周', '第3周', '第4周', '第5周'], axisLabel: { color: '#6b7280' } }],
+    xAxis: [{
+      type: 'category',
+      data: weeks,
+      axisLabel: { color: '#6b7280' }
+    }],
     yAxis: [
-      { type: 'value', name: '体重(g)', axisLine: { show: true, lineStyle: { color: '#14b8a6' } } },
-      { type: 'value', name: '存活率(%)', min: 80, max: 100, axisLine: { show: true, lineStyle: { color: '#f59e0b' } }, splitLine: { show: false } }
+      {
+        type: 'value',
+        name: '体重(g)',
+        min: 0,
+        max: Math.ceil(maxWeight * 1.3),
+        axisLine: { show: true, lineStyle: { color: '#14b8a6' } }
+      },
+      {
+        type: 'value',
+        name: '存活率(%)',
+        min: survivalMin,
+        max: 100,
+        axisLine: { show: true, lineStyle: { color: '#f59e0b' } },
+        splitLine: { show: false }
+      }
     ],
     series: [
-      { name: '平均体重 (g)', type: 'bar', data: [2.5, 4.8, 8.2, 14.5, 22.0], itemStyle: { color: '#2dd4bf', borderRadius: [4, 4, 0, 0] } },
-      { name: '存活率 (%)', type: 'line', yAxisIndex: 1, data: [100, 99.5, 98.2, 97.0, 96.5], itemStyle: { color: '#f59e0b' }, lineStyle: { width: 3 } }
+      {
+        name: '平均体重 (g)',
+        type: 'bar',
+        data: weights,
+        itemStyle: { color: '#2dd4bf', borderRadius: [4, 4, 0, 0] }
+      },
+      {
+        name: '存活率 (%)',
+        type: 'line',
+        yAxisIndex: 1,
+        data: survivalRates,
+        itemStyle: { color: '#f59e0b' },
+        lineStyle: { width: 3 }
+      }
     ]
   }
-  chartInstance.setOption(option)
+  chartInstance.setOption(option, true)
+  chartInstance.resize()
 }
 
 // 24h 水质趋势图（新增）
@@ -544,14 +698,11 @@ onMounted(async () => {
   const userStr = sessionStorage.getItem('aqua_user')
   if (userStr) currentUser.value = JSON.parse(userStr)
 
-  // 生长曲线（无异步依赖，直接渲染）
-  setTimeout(() => {
-    initGrowthChart()
-    window.addEventListener('resize', () => {
-      chartInstance?.resize()
-      iotChartInstance?.resize()
-    })
-  }, 100)
+  // resize 监听
+  window.addEventListener('resize', () => {
+    chartInstance?.resize()
+    iotChartInstance?.resize()
+  })
 
   // IoT 数据
   if (currentFarmId.value) {
@@ -562,6 +713,10 @@ onMounted(async () => {
       selectedPondId.value = Number(targetPondId)
       sessionStorage.removeItem('target_pond_id')
       await loadAllData()
+    }
+    // 加载批次列表（自动选中第一个并加载生长曲线）
+    if (selectedPondId.value) {
+      loadBatches()
     }
   }
 

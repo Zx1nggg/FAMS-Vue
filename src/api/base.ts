@@ -77,6 +77,7 @@ export const getBatchGrowthLogById = (id: string | number) => request({ url: `/l
 export const addBatchGrowthLog = (data: any) => request({ url: '/lifecycle/batch-growth-log', method: 'post', data })
 export const updateBatchGrowthLog = (id: string | number, data: any) => request({ url: `/lifecycle/batch-growth-log/${id}`, method: 'put', data })
 export const delBatchGrowthLog = (ids: string | number) => request({ url: `/lifecycle/batch-growth-log/${ids}`, method: 'delete' })
+export const getGrowthChart = (batchNo: string, pondId: number) => request({ url: '/lifecycle/batch-growth-log/growth-chart', method: 'get', params: { batchNo, pondId } })
 
 // ==================== IoT 传感器数据 ====================
 export const getLatestSensorData = (pondId: number) => request({ url: '/iot/sensor-data/latest', method: 'get', params: { pondId } })
