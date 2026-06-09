@@ -56,7 +56,7 @@ service.interceptors.response.use(
     if (error.response && error.response.status === 401) {
       ElMessage.error('登录已过期，请重新登录');
       handleUnauthorized();
-    } else {
+    } else if (!(error.config && (error.config as any).silent)) {
       ElMessage.error(error.message || '网络连接异常');
     }
     return Promise.reject(error);

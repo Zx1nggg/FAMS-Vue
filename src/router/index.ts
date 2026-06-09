@@ -20,10 +20,22 @@ const routes = [
     component: Portal,
     meta: { title: '智渔 FAMS - 角色选择入口' }
   },
-  { 
-    path: '/login', 
+  {
+    path: '/login',
     name: 'Login',
-    component: Login 
+    component: Login
+  },
+  {
+    path: '/register',
+    name: 'Register',
+    component: () => import('../views/register/Register.vue'),
+    meta: { title: '入驻申请' }
+  },
+  {
+    path: '/register/status',
+    name: 'RegistrationStatus',
+    component: () => import('../views/register/RegistrationStatus.vue'),
+    meta: { title: '申请进度查询' }
   },
    {
     path: '/farmer',
@@ -83,6 +95,18 @@ const routes = [
         name: 'PondOverview',
         component: () => import('../views/farmer/lifecycle/PondOverview.vue'),
         meta: { title: '池塘实时概览' }
+      },
+      {
+        path: 'profile',
+        name: 'FarmerProfile',
+        component: () => import('../views/farmer/Profile.vue'),
+        meta: { title: '个人主页' }
+      },
+      {
+        path: 'settings',
+        name: 'FarmerSettings',
+        component: () => import('../views/farmer/Profile.vue'),
+        meta: { title: '账号设置' }
       }
     ]
   },
@@ -92,6 +116,14 @@ const routes = [
     component: RegulatorDashboard 
   },
   // { path: '/dashboard/admin', component: AdminDashboard }
+
+  // 管理员路由（暂时使用内联布局，后续可创建 AdminLayout）
+  {
+    path: '/admin/registrations',
+    name: 'RegistrationManagement',
+    component: () => import('../views/admin/RegistrationManagement.vue'),
+    meta: { title: '入驻申请审批' }
+  }
 ]
 
 const router = createRouter({
@@ -99,14 +131,19 @@ const router = createRouter({
   routes
 })
 
-// 简单的路由守卫拦截
+// 路由守卫拦截
 // Token 存储在 HttpOnly Cookie 中，前端无法读取
 // 因此通过检查 sessionStorage 中的用户信息来判断登录状态
 router.beforeEach((to, from, next) => {
   const userStr = sessionStorage.getItem('aqua_user')
-  
-  // 如果去 dashboard 但没有用户信息（说明未登录），打回入口
-  if (to.path.startsWith('/dashboard') && !userStr) {
+
+  // 需要认证的路由前缀
+  const needAuth = to.path.startsWith('/farmer')
+    || to.path.startsWith('/dashboard')
+    || to.path.startsWith('/admin')
+
+  if (needAuth && !userStr) {
+    // 未登录，跳转到门户页
     next('/')
   } else {
     next()

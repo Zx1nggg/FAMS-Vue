@@ -185,6 +185,12 @@
              </button>
           </div>
         </div>
+
+        <!-- 入驻申请入口 -->
+        <p class="text-center text-sm text-slate-400 mt-6">
+          还没有账号？
+          <router-link to="/register" class="text-teal-600 hover:underline font-medium">立即申请入驻</router-link>
+        </p>
       </div>
     </div>
   </div>
@@ -307,7 +313,7 @@ const handleLogin = async () => {
     let path = '/'
     if (user.role === 'FARMER') path = '/farmer/dashboard'
     else if (user.role === 'REGULATOR') path = '/dashboard/regulator'
-    else if (user.role === 'ADMIN') path = '/dashboard/admin'
+    else if (user.role === 'ADMIN') path = '/admin/registrations'
     
     router.push(path)
 

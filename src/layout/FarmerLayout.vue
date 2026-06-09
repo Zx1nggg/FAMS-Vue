@@ -46,10 +46,21 @@
         </div>
       </nav>
 
-      <!-- 底部系统状态 (将用户信息移至顶部后，这里保留纯净的系统状态) -->
-      <div class="p-4 bg-slate-950 border-t border-slate-800 flex items-center justify-between text-xs text-slate-500 shrink-0">
-        <span>FAMS v3.0</span>
-        <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-500"></span> 系统在线</span>
+      <!-- 🌟 底部系统状态 (升级为可探测交互版) -->
+      <div class="p-4 bg-slate-950 border-t border-slate-800 flex items-center justify-between text-xs shrink-0 select-none">
+        <span class="text-slate-500">FAMS v3.0</span>
+        <div 
+          @click="checkServerHealth"
+          title="点击手动检测系统连接状态"
+          class="flex items-center gap-1.5 cursor-pointer transition-colors font-medium group"
+          :class="isServerOnline ? 'text-emerald-500 hover:text-emerald-400' : 'text-red-500 hover:text-red-400'"
+        >
+          <span class="relative flex h-2 w-2">
+            <span v-if="isServerOnline" class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-2 w-2" :class="isServerOnline ? 'bg-emerald-500' : 'bg-red-500'"></span>
+          </span>
+          {{ isServerOnline ? '系统在线' : '连接断开' }}
+        </div>
       </div>
     </aside>
 
@@ -57,7 +68,7 @@
     <div class="flex-1 flex flex-col overflow-hidden bg-gray-50">
       
       <!-- 🌟 恢复的顶部 Header -->
-      <header class="bg-white h-16 shadow-sm border-b border-gray-200 flex items-center justify-between px-6 z-10 shrink-0">
+      <header class="relative bg-white h-16 shadow-sm border-b border-gray-200 flex items-center justify-between px-6 z-50 shrink-0">
         <!-- 左侧：页面标题与当前农场标识 -->
         <div class="flex items-center gap-4">
           <h2 class="text-lg font-bold text-gray-800">{{ $route.meta.title || '智渔管理系统' }}</h2>
@@ -73,8 +84,9 @@
           <div class="relative group cursor-pointer pr-2">
             <!-- 触发区域 -->
             <div class="flex items-center gap-3">
-              <div class="w-9 h-9 rounded-full bg-gradient-to-br from-teal-500 to-emerald-600 flex items-center justify-center text-white font-bold text-sm shadow-sm border-2 border-white ring-2 ring-gray-100">
-                {{ userInitial }}
+              <div class="w-9 h-9 rounded-full bg-gradient-to-br from-teal-500 to-emerald-600 flex items-center justify-center text-white font-bold text-sm shadow-sm border-2 border-white ring-2 ring-gray-100 overflow-hidden">
+                <img v-if="avatarUrl" :src="avatarUrl" class="w-full h-full object-cover" />
+                <span v-else>{{ userInitial }}</span>
               </div>
               <div class="flex flex-col">
                 <span class="text-sm font-bold text-gray-700 leading-none mb-1">{{ currentUser.name }}</span>
@@ -125,7 +137,6 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import request from '@/utils/request'
-// 🌟 新增引入 ChevronDown(小箭头), User(个人主页), Settings(设置) 图标
 import { 
   Fish, LayoutDashboard, Home, Box, Users,
   Truck, MapPin, Stethoscope, LogOut, ChevronDown, User, Settings, BookOpen, LayoutGrid
@@ -155,9 +166,39 @@ const menuGroups = [
   }
 ]
 
-const currentUser = ref({ name: '游客', role: 'FARMER' })
-const userInitial = computed(() => currentUser.value.name.charAt(0))
-const currentFarmName = ref('') // 顶部 Header 显示的当前农场名
+const currentUser = ref({ name: '游客', role: 'FARMER', avatar: '' })
+const cachedAvatarBase64 = ref(sessionStorage.getItem('aqua_avatar_base64') || '')
+const userInitial = computed(() => {
+  if (currentUser.value.name && currentUser.value.name.length > 0) {
+    return currentUser.value.name.charAt(0)
+  }
+  return '?'
+})
+const avatarUrl = computed(() => {
+  if (cachedAvatarBase64.value) return cachedAvatarBase64.value
+  if (!currentUser.value.avatar) return ''
+  return '/api/' + currentUser.value.avatar
+})
+const currentFarmName = ref('') 
+
+// 后端状态探测逻辑 (保持和 Portal 一致)
+const isServerOnline = ref(true)
+
+const checkServerHealth = async () => {
+  try {
+    // 设置一个 3 秒就超时的请求，防止一直等待
+    await request.get('/test/health', { timeout: 3000 })
+    isServerOnline.value = true
+  } catch (error) {
+    // 只要是网络不通、后端宕机、超时，统统视为离线
+    if (error.message === 'Network Error' || error.code === 'ECONNABORTED' || (error.response && error.response.status >= 500)) {
+      isServerOnline.value = false
+    } else {
+      // 哪怕后端报 401(没权限)/404(路由不对)，其实都说明后端服务器是活着的
+      isServerOnline.value = true
+    }
+  }
+}
 
 onMounted(() => {
   const userStr = sessionStorage.getItem('aqua_user')
@@ -172,6 +213,9 @@ onMounted(() => {
       if (activeFarm) currentFarmName.value = activeFarm.farmName
     }
   }
+
+  // 页面加载时探测一次后端连通性
+  checkServerHealth()
 })
 
 const handleLogout = async () => {
@@ -179,6 +223,7 @@ const handleLogout = async () => {
   finally {
     sessionStorage.removeItem('aqua_user')
     sessionStorage.removeItem('current_farm_id')
+    sessionStorage.removeItem('current_farm_name')
     router.push('/login')
   }
 }

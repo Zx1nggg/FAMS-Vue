@@ -27,10 +27,26 @@
         </div>
         <div class="hidden md:flex items-center gap-6 font-medium text-xs tracking-wider">
           <a href="#" class="hover:text-teal-300 transition-colors flex items-center gap-1"><BookOpen class="w-3 h-3"/> 项目结题报告</a>
-          <a href="#" class="hover:text-blue-300 transition-colors flex items-center gap-1"><Network class="w-3 h-3"/> 物联网节点拓扑</a>
-          <div class="px-3 py-1 bg-teal-500/20 text-teal-300 border border-teal-500/30 rounded-full">
-            系统状态：运行良好
+          
+          <!-- 🌟 将原有的物联网拓扑替换为：入驻申请入口 -->
+          <router-link to="/register" class="hover:text-blue-300 transition-colors flex items-center gap-1">
+            <UserPlus class="w-3 h-3"/> 养殖户入驻申请
+          </router-link>
+          
+          <!-- 🌟 动态系统状态指示牌 (支持手动点击重新探测) -->
+          <div 
+            @click="checkServerHealth"
+            title="点击手动检测系统连接状态"
+            class="px-3 py-1 border rounded-full flex items-center gap-2 transition-all duration-500 cursor-pointer hover:scale-105"
+            :class="isServerOnline ? 'bg-teal-500/20 text-teal-300 border-teal-500/30 hover:bg-teal-500/30' : 'bg-red-500/20 text-red-300 border-red-500/30 shadow-[0_0_15px_rgba(239,68,68,0.4)] hover:bg-red-500/30'"
+          >
+            <span class="relative flex h-2 w-2">
+              <span v-if="isServerOnline" class="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-2 w-2" :class="isServerOnline ? 'bg-teal-500' : 'bg-red-500'"></span>
+            </span>
+            系统状态：{{ isServerOnline ? '运行良好' : '服务已断开' }}
           </div>
+
         </div>
       </div>
     </header>
@@ -44,8 +60,8 @@
         <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3/4 h-40 bg-gradient-to-r from-teal-500/20 to-blue-500/20 blur-[100px] pointer-events-none"></div>
       
         <div class="flex items-center justify-center gap-4 mb-4">
-          <!-- 产品Logo占位 (新增) -->
-           <div class="w-16 h-16 bg-white rounded-xl flex items-center justify-center border border-white/20 p-1">
+          <!-- 产品Logo占位 -->
+           <div class="w-16 h-16 bg-white rounded-xl flex items-center justify-center border border-white/20 p-1 shadow-[0_0_20px_rgba(255,255,255,0.1)]">
             <img src="/智渔-logo-removebg.png" @contextmenu.prevent draggable="false" class="w-full h-full object-contain" alt="智渔logo" />
           </div>
           <h1 class="text-5xl md:text-6xl font-extrabold text-white tracking-tight drop-shadow-lg flex items-center gap-4">
@@ -123,12 +139,39 @@
 </template>
 
 <script setup>
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { Waves, Activity, Cpu, ArrowRight, BookOpen, Network, Radio } from 'lucide-vue-next'
+// 移除了无用的 Network 图标，保留 UserPlus
+import { Waves, Activity, Cpu, ArrowRight, BookOpen, UserPlus } from 'lucide-vue-next'
+// 导入我们封装好的 axios 实例
+import request from '@/utils/request'
 
 const router = useRouter()
-
 const goToLogin = (roleType) => {
   router.push({ path: '/login', query: { role: roleType } })
 }
+
+// 🌟 后端状态探测逻辑 (仅保留单次或手动触发)
+const isServerOnline = ref(true) // 默认假设在线，避免一闪而过的红灯
+
+const checkServerHealth = async () => {
+  try {
+    // 设置一个 3 秒就超时的请求，防止一直等待
+    await request.get('/test/health', { timeout: 3000 })
+    isServerOnline.value = true
+  } catch (error) {
+    // 只要是网络不通、后端宕机、超时，统统视为离线
+    if (error.message === 'Network Error' || error.code === 'ECONNABORTED' || (error.response && error.response.status >= 500)) {
+      isServerOnline.value = false
+    } else {
+      // 哪怕后端报 401(没权限)/404(路由不对)，其实都说明后端服务器是活着的
+      isServerOnline.value = true
+    }
+  }
+}
+
+onMounted(() => {
+  // 进入页面仅探测一次，不再使用 setInterval
+  checkServerHealth()
+})
 </script>

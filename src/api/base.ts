@@ -87,3 +87,8 @@ export const getSensorDataHistory = (pondId: number, hours?: number) => request(
 // ==================== 告警记录 ====================
 export const getAlarmPage = (params: Record<string, any>) => request({ url: '/log/alarm-record/list', method: 'get', params })
 export const handleAlarm = (id: string | number) => request({ url: `/log/alarm-record/${id}/handle`, method: 'put' })
+
+// ==================== 用户个人主页 ====================
+export const getUserProfile = () => request({ url: '/user/profile', method: 'get', silent: true } as any)
+export const updateUserProfile = (data: any) => request({ url: '/user/profile', method: 'put', data })
+export const uploadAvatar = (formData: FormData) => request({ url: '/user/avatar', method: 'post', data: formData, headers: { 'Content-Type': 'multipart/form-data' } })
