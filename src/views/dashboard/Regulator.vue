@@ -165,6 +165,7 @@ import {
   Map, Building2, Fish, FileCheck, AlertTriangle
 } from 'lucide-vue-next'
 import GisMap from '@/components/GisMap.vue'
+import { clearUserCache } from '@/utils/storage'
 
 const router = useRouter()
 
@@ -178,7 +179,8 @@ const handleLogout = async () => {
     console.error('退出请求失败', error);
   } finally {
     // 2. 清理前端自己存的非敏感用户信息（比如昵称、头像）
-    sessionStorage.removeItem('aqua_user'); 
+    clearUserCache()
+    sessionStorage.removeItem('aqua_user');
     // 注意：不要再去 removeItem('aqua_token') 了，因为你根本摸不到它，交由后端销毁
     
     // 3. 跳转回登录页

@@ -70,30 +70,31 @@
           <fieldset class="border border-slate-200 rounded-xl p-4">
             <legend class="text-xs font-bold text-slate-500 uppercase tracking-wider px-2">账号信息</legend>
             <div class="space-y-4">
-              <!-- 用户名 -->
+              <!-- 手机号（登录账号） -->
               <div>
                 <label class="block text-left text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wide">
-                  登录账号 <span class="text-red-500">*</span>
+                  手机号 <span class="text-red-500">*</span>
                 </label>
                 <div class="relative">
-                  <input type="text" v-model="form.username" required autocomplete="off" @blur="checkUsername"
-                    @input="usernameAvailable = null"
+                  <input type="tel" v-model="form.phone" required autocomplete="tel" @blur="checkPhone"
+                    @input="phoneAvailable = null"
+                    maxlength="11"
                     class="block w-full pl-3 pr-10 py-2.5 border rounded-lg text-slate-900 focus:outline-none focus:ring-2 transition-colors text-sm"
-                    :class="usernameBorderClass" placeholder="请输入登录账号（3-50个字符）" />
-                  <div v-if="checkingUsername" class="absolute inset-y-0 right-0 pr-3 flex items-center">
+                    :class="phoneBorderClass" placeholder="请输入11位手机号（用于登录）" />
+                  <div v-if="checkingPhone" class="absolute inset-y-0 right-0 pr-3 flex items-center">
                     <Loader2 class="w-4 h-4 text-slate-400 animate-spin" />
                   </div>
-                  <div v-else-if="usernameAvailable === true"
+                  <div v-else-if="phoneAvailable === true"
                     class="absolute inset-y-0 right-0 pr-3 flex items-center">
                     <CheckCircle class="w-4 h-4 text-emerald-500" />
                   </div>
-                  <div v-else-if="usernameAvailable === false"
+                  <div v-else-if="phoneAvailable === false"
                     class="absolute inset-y-0 right-0 pr-3 flex items-center">
                     <XCircle class="w-4 h-4 text-red-500" />
                   </div>
                 </div>
-                <p v-if="usernameAvailable === false" class="text-xs text-red-500 mt-1">该账号已被注册或正在审核中</p>
-                <p v-else-if="usernameAvailable === true" class="text-xs text-emerald-600 mt-1">该账号可用</p>
+                <p v-if="phoneAvailable === false" class="text-xs text-red-500 mt-1">该手机号已被注册或正在审核中</p>
+                <p v-else-if="phoneAvailable === true" class="text-xs text-emerald-600 mt-1">该手机号可用</p>
               </div>
 
               <!-- 密码 -->
@@ -140,25 +141,13 @@
                   class="block w-full pl-3 pr-3 py-2.5 border border-slate-200 rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus:border-teal-500 focus:ring-teal-100 transition-colors text-sm"
                   placeholder="请输入您的真实姓名" />
               </div>
-              <div class="grid grid-cols-2 gap-3">
-                <div>
-                  <label class="block text-left text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wide">
-                    联系电话
-                  </label>
-                      <input type="tel" v-model="form.phone"
-                        class="block w-full pl-3 pr-3 py-2.5 border rounded-lg text-slate-900 focus:outline-none focus:ring-2 transition-colors text-sm"
-                        :class="phoneBorderClass"
-                        placeholder="手机号码" />
-                      <p v-if="!isPhoneValid && form.phone" class="text-xs text-red-500 mt-1">请输入有效的手机号（11位，国内）</p>
-                </div>
-                <div>
-                  <label class="block text-left text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wide">
-                    电子邮箱
-                  </label>
-                  <input type="email" v-model="form.email"
-                    class="block w-full pl-3 pr-3 py-2.5 border border-slate-200 rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus:border-teal-500 focus:ring-teal-100 transition-colors text-sm"
-                    placeholder="email@example.com" />
-                </div>
+              <div>
+                <label class="block text-left text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wide">
+                  电子邮箱
+                </label>
+                <input type="email" v-model="form.email"
+                  class="block w-full pl-3 pr-3 py-2.5 border border-slate-200 rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus:border-teal-500 focus:ring-teal-100 transition-colors text-sm"
+                  placeholder="email@example.com" />
               </div>
             </div>
           </fieldset>
@@ -261,14 +250,13 @@ const loading = ref(false)
 const showPassword = ref(false)
 const errorMsg = ref('')
 const confirmPassword = ref('')
-const checkingUsername = ref(false)
-const usernameAvailable = ref(null)
+const checkingPhone = ref(false)
+const phoneAvailable = ref(null)
 
 const form = reactive({
-  username: '',
+  phone: '',
   password: '',
   realName: '',
-  phone: '',
   email: '',
   farmName: '',
   farmProvince: '',
@@ -277,11 +265,21 @@ const form = reactive({
   applicationReason: ''
 })
 
-// 用户名输入框边框颜色
-const usernameBorderClass = computed(() => {
-  if (usernameAvailable.value === true) return 'border-emerald-500 focus:border-emerald-500 focus:ring-emerald-100'
-  if (usernameAvailable.value === false) return 'border-red-400 focus:border-red-500 focus:ring-red-100'
-  return 'border-slate-200 focus:border-teal-500 focus:ring-teal-100'
+// 手机号格式校验（中国手机号规则）
+const phoneRegex = /^1[3-9]\d{9}$/
+const isPhoneValid = computed(() => {
+  if (!form.phone) return false
+  return phoneRegex.test(form.phone)
+})
+
+// 手机号输入框边框颜色
+const phoneBorderClass = computed(() => {
+  if (phoneAvailable.value === true) return 'border-emerald-500 focus:border-emerald-500 focus:ring-emerald-100'
+  if (phoneAvailable.value === false) return 'border-red-400 focus:border-red-500 focus:ring-red-100'
+  if (!form.phone) return 'border-slate-200 focus:border-teal-500 focus:ring-teal-100'
+  return isPhoneValid.value
+    ? 'border-slate-200 focus:border-teal-500 focus:ring-teal-100'
+    : 'border-red-400 focus:border-red-500 focus:ring-red-100'
 })
 
 // 确认密码输入框边框颜色
@@ -292,46 +290,31 @@ const confirmPasswordClass = computed(() => {
     : 'border-red-400 focus:border-red-500 focus:ring-red-100'
 })
 
-// 手机号格式校验（中国手机号规则）
-const phoneRegex = /^1[3-9]\d{9}$/
-const isPhoneValid = computed(() => {
-  if (!form.phone) return true
-  return phoneRegex.test(form.phone)
-})
-
-const phoneBorderClass = computed(() => {
-  if (!form.phone) return 'border-slate-200 focus:border-teal-500 focus:ring-teal-100'
-  return isPhoneValid.value
-    ? 'border-emerald-500 focus:border-emerald-500 focus:ring-emerald-100'
-    : 'border-red-400 focus:border-red-500 focus:ring-red-100'
-})
-
 // 表单是否有效
 const isFormValid = computed(() => {
-  if (!form.username || !form.password || !form.realName || !form.farmName) return false
+  if (!form.phone || !isPhoneValid.value || !form.password || !form.realName || !form.farmName) return false
   if (form.password !== confirmPassword.value) return false
-  if (usernameAvailable.value === false) return false
-  if (!isPhoneValid.value) return false
+  if (phoneAvailable.value === false) return false
   return true
 })
 
-// 检查用户名可用性
+// 检查手机号可用性
 let checkTimer = null
-const checkUsername = () => {
-  if (!form.username || form.username.length < 3) {
-    usernameAvailable.value = null
+const checkPhone = () => {
+  if (!form.phone || !isPhoneValid.value) {
+    phoneAvailable.value = null
     return
   }
   clearTimeout(checkTimer)
   checkTimer = setTimeout(async () => {
-    checkingUsername.value = true
+    checkingPhone.value = true
     try {
-      const res = await request.get('/auth/check-username', { params: { username: form.username } })
-      usernameAvailable.value = res.data.available
+      const res = await request.get('/auth/check-phone', { params: { phone: form.phone } })
+      phoneAvailable.value = res.data.available
     } catch {
-      usernameAvailable.value = null
+      phoneAvailable.value = null
     } finally {
-      checkingUsername.value = false
+      checkingPhone.value = false
     }
   }, 500)
 }
@@ -344,10 +327,10 @@ const handleSubmit = async () => {
 
   try {
     await request.post('/auth/register', form)
-    // 提交成功，跳转到成功提示页
+    // 提交成功，跳转到成功提示页（用手机号查询进度）
     router.push({
       path: '/register/status',
-      query: { username: form.username, submitted: '1' }
+      query: { phone: form.phone, submitted: '1' }
     })
   } catch (error) {
     errorMsg.value = error.message || '网络连接异常，请检查后端服务是否启动'

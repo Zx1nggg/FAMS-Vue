@@ -137,9 +137,10 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import request from '@/utils/request'
+import { getCachedAvatar, clearUserCache } from '@/utils/storage'
 import { 
   Fish, LayoutDashboard, Home, Box, Users,
-  Truck, MapPin, Stethoscope, LogOut, ChevronDown, User, Settings, BookOpen, LayoutGrid
+  Truck, MapPin, Stethoscope, LogOut, ChevronDown, User, Settings, BookOpen, LayoutGrid, DollarSign
 } from 'lucide-vue-next'
 
 const router = useRouter()
@@ -162,12 +163,13 @@ const menuGroups = [
       { name: '苗种投放关联', path: '/farmer/lifecycle/stocking', icon: MapPin },
       { name: '日常巡塘台账', path: '/farmer/lifecycle/patrol', icon: Stethoscope },
       { name: '池塘实时概览', path: '/farmer/lifecycle/overview', icon: LayoutGrid },
+      { name: '出塘结算管理', path: '/farmer/lifecycle/harvest', icon: DollarSign },
     ]
   }
 ]
 
 const currentUser = ref({ name: '游客', role: 'FARMER', avatar: '' })
-const cachedAvatarBase64 = ref(sessionStorage.getItem('aqua_avatar_base64') || '')
+const cachedAvatarBase64 = ref(getCachedAvatar())
 const userInitial = computed(() => {
   if (currentUser.value.name && currentUser.value.name.length > 0) {
     return currentUser.value.name.charAt(0)
@@ -219,8 +221,10 @@ onMounted(() => {
 })
 
 const handleLogout = async () => {
-  try { await request.post('/auth/logout') } catch (error) {} 
+  try { await request.post('/auth/logout') } catch (error) {}
   finally {
+    // 清理用户专属缓存（头像、profile），再清通用字段
+    clearUserCache()
     sessionStorage.removeItem('aqua_user')
     sessionStorage.removeItem('current_farm_id')
     sessionStorage.removeItem('current_farm_name')

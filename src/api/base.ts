@@ -88,6 +88,14 @@ export const getSensorDataHistory = (pondId: number, hours?: number) => request(
 export const getAlarmPage = (params: Record<string, any>) => request({ url: '/log/alarm-record/list', method: 'get', params })
 export const handleAlarm = (id: string | number) => request({ url: `/log/alarm-record/${id}/handle`, method: 'put' })
 
+// ==================== 出塘结算管理 ====================
+export const getHarvestPage = (params: Record<string, any>) => request({ url: '/lifecycle/harvest-record/list', method: 'get', params })
+export const getHarvestById = (id: string | number) => request({ url: `/lifecycle/harvest-record/${id}`, method: 'get' })
+export const addHarvest = (data: any) => request({ url: '/lifecycle/harvest-record', method: 'post', data })
+export const updateHarvest = (id: string | number, data: any) => request({ url: `/lifecycle/harvest-record/${id}`, method: 'put', data })
+export const delHarvest = (ids: string | number) => request({ url: `/lifecycle/harvest-record/${ids}`, method: 'delete' })
+export const getHarvestPreview = (batchId: number) => request({ url: '/lifecycle/harvest-record/preview', method: 'get', params: { batchId } })
+
 // ==================== 用户个人主页 ====================
 export const getUserProfile = () => request({ url: '/user/profile', method: 'get', silent: true } as any)
 export const updateUserProfile = (data: any) => request({ url: '/user/profile', method: 'put', data })

@@ -68,7 +68,7 @@
         </button>
       </div>
 
-      <div class="w-full max-w-sm mx-auto px-6 py-12">
+      <div class="w-full max-w-sm mx-auto px-6 py-12 mt-16">
         <div class="mb-10">
           <div class="inline-flex items-center justify-center w-12 h-12 rounded-xl mb-4 transition-colors duration-700" :class="roleConfig.lightBgClass">
              <User class="w-6 h-6 transition-colors duration-700" :class="roleConfig.textClass" />
@@ -78,22 +78,23 @@
         </div>
 
         <form @submit.prevent="handleLogin" class="space-y-6">
-          <!-- 账号输入框 -->
+          <!-- 手机号输入框 -->
           <div>
-            <label class="block text-left text-xs font-bold text-slate-700 mb-2 uppercase tracking-wide">Username</label>
+            <label class="block text-left text-xs font-bold text-slate-700 mb-2 uppercase tracking-wide">Phone</label>
             <div class="relative">
               <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <User class="h-4 w-4 text-slate-400" />
+                <Phone class="h-4 w-4 text-slate-400" />
               </div>
               <input
-                type="text"
-                v-model="loginForm.username"
+                type="tel"
+                v-model="loginForm.phone"
                 required
-                autocomplete="username"
+                autocomplete="tel"
+                maxlength="11"
                 @input="errorMsg = ''"
                 class="block w-full text-left pl-10 pr-3 py-3 border border-slate-200 rounded-lg text-slate-900 focus:outline-none focus:ring-1 transition-colors bg-slate-50 focus:bg-white text-sm"
                 :class="roleConfig.focusClass"
-                placeholder="请输入系统分配的账号"
+                placeholder="请输入手机号"
               />
             </div>
           </div>
@@ -133,13 +134,13 @@
           <!-- 记住我 -->
           <div class="flex items-center justify-between">
             <label class="flex items-center gap-2 cursor-pointer group">
-              <input 
-                type="checkbox" 
-                v-model="loginForm.rememberUsername"
+              <input
+                type="checkbox"
+                v-model="loginForm.rememberPhone"
                 class="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-600 cursor-pointer"
               />
               <span class="text-xs font-medium text-slate-500 group-hover:text-slate-800 transition-colors">
-                记住账号
+                记住手机号
               </span>
             </label>
           </div>
@@ -200,7 +201,8 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import request from '@/utils/request'
-import { User, Lock, ArrowLeft, ShieldCheck, Activity, AlertOctagon, Waves, LineChart, Cpu, Eye, EyeOff } from 'lucide-vue-next'
+import { clearOldStaticCaches } from '@/utils/storage'
+import { User, Lock, ArrowLeft, ShieldCheck, Activity, AlertOctagon, Waves, LineChart, Cpu, Eye, EyeOff, Phone } from 'lucide-vue-next'
 
 const router = useRouter()
 const route = useRoute()
@@ -210,7 +212,7 @@ const currentRole = ref('farmer')
 const errorMsg = ref('')
 const showPassword = ref(false)
 
-const loginForm = reactive({ username: '', password: '', rememberUsername: false })
+const loginForm = reactive({ phone: '', password: '', rememberPhone: false })
 
 const roleConfigs = {
   farmer: { 
@@ -245,10 +247,10 @@ onMounted(() => {
   if (savedAccountStr) {
     try {
       const savedAccount = JSON.parse(savedAccountStr)
-      // 只有当保存的角色和当前正在打开的页面角色一致时，才自动填入账号
+      // 只有当保存的角色和当前正在打开的页面角色一致时，才自动填入手机号
       if (savedAccount.role === currentRole.value) {
-        loginForm.username = savedAccount.username
-        loginForm.rememberUsername = true
+        loginForm.phone = savedAccount.phone
+        loginForm.rememberPhone = true
       }
     } catch (e) {
       localStorage.removeItem('fams_remembered_account')
@@ -258,13 +260,12 @@ onMounted(() => {
 
 // 快捷测试账号填入
 const fillTestAccount = (role) => {
-  loginForm.username = role
-  loginForm.password = '123456' 
+  loginForm.password = '123456'
   errorMsg.value = ''
-  
-  if(role === 'admin') currentRole.value = 'admin'
-  if(role === 'farmer') currentRole.value = 'farmer'
-  if(role === 'leader') currentRole.value = 'regulator'
+
+  if(role === 'admin') { currentRole.value = 'admin'; loginForm.phone = '13800000001' }
+  if(role === 'farmer') { currentRole.value = 'farmer'; loginForm.phone = '13800000002' }
+  if(role === 'leader') { currentRole.value = 'regulator'; loginForm.phone = '13800000003' }
 }
 
   // 后端的真实登录请求
@@ -274,7 +275,7 @@ const handleLogin = async () => {
   
   try {
     const res = await request.post('/auth/login', {
-      username: loginForm.username,
+      phone: loginForm.phone,
       password: loginForm.password
     })
 
@@ -296,13 +297,16 @@ const handleLogin = async () => {
     // 存用户展示信息（昵称、角色），Token 由 HttpOnly Cookie 管理
     sessionStorage.setItem('aqua_user', JSON.stringify(user))
 
+    // 清理旧版静态 key 缓存，避免不同用户头像串台
+    clearOldStaticCaches()
+
     // 解决退出重定向问题：在登录时，无论如何都记录一下最后一次成功登录的身份界面
     localStorage.setItem('fams_last_role', currentRole.value)
 
-    // 解决串台问题：存入对象（包含角色和账号）
-    if (loginForm.rememberUsername) {
+    // 解决串台问题：存入对象（包含角色和手机号）
+    if (loginForm.rememberPhone) {
       localStorage.setItem('fams_remembered_account', JSON.stringify({
-        username: loginForm.username,
+        phone: loginForm.phone,
         role: currentRole.value
       }))
     } else {

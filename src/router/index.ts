@@ -12,6 +12,8 @@ import PurchaseBatchManagement from '../views/farmer/base/PurchaseBatchManagemen
 import SeedlingDictManagement from '../views/farmer/base/SeedlingDictManagement.vue'
 import StockingManagement from '../views/farmer/base/StockingManagement.vue'
 import DailyPatrol from '../views/farmer/lifecycle/DailyPatrol.vue'
+import HarvestSettlement from '../views/farmer/lifecycle/HarvestSettlement.vue'
+
 
 const routes = [
   { 
@@ -97,6 +99,12 @@ const routes = [
         meta: { title: '池塘实时概览' }
       },
       {
+        path: 'lifecycle/harvest',
+        name: 'HarvestSettlement',
+        component: HarvestSettlement,
+        meta: { title: '出塘结算管理' }
+      },
+      {
         path: 'profile',
         name: 'FarmerProfile',
         component: () => import('../views/farmer/Profile.vue'),
@@ -105,7 +113,7 @@ const routes = [
       {
         path: 'settings',
         name: 'FarmerSettings',
-        component: () => import('../views/farmer/Profile.vue'),
+        component: () => import('../views/farmer/Settings.vue'),
         meta: { title: '账号设置' }
       }
     ]
