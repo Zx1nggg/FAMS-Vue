@@ -252,6 +252,19 @@
                 <span class="text-gray-600 font-medium">预估产量</span>
                 <span class="font-bold text-lg text-blue-700 leading-none">{{ previewData.predictedYieldKg || '-' }} kg</span>
               </div>
+              <!-- 成本参考值 -->
+              <div v-if="previewData.seedlingCost" class="col-span-2 flex justify-between bg-amber-50/70 px-2 py-1 rounded">
+                <span class="text-gray-600 font-medium">参考苗种成本</span>
+                <span class="font-bold text-amber-700">¥{{ Number(previewData.seedlingCost).toLocaleString() }}</span>
+              </div>
+              <div v-if="previewData.totalFeedCost" class="col-span-2 flex justify-between bg-amber-50/70 px-2 py-1 rounded">
+                <span class="text-gray-600 font-medium">参考饲料成本</span>
+                <span class="font-bold text-amber-700">¥{{ Number(previewData.totalFeedCost).toLocaleString() }}</span>
+              </div>
+              <div v-if="previewData.totalMedicineCost" class="col-span-2 flex justify-between bg-amber-50/70 px-2 py-1 rounded">
+                <span class="text-gray-600 font-medium">参考药品成本</span>
+                <span class="font-bold text-amber-700">¥{{ Number(previewData.totalMedicineCost).toLocaleString() }}</span>
+              </div>
             </div>
           </div>
         </el-form-item>
@@ -486,7 +499,7 @@ function onPondChange() {
   previewData.value = null
 }
 
-/** 切换批次 → 加载预览 */
+/** 切换批次 → 加载预览，自动回填成本参考值 */
 async function onBatchChange(batchNo) {
   if (!batchNo) {
     previewData.value = null
@@ -499,6 +512,19 @@ async function onBatchChange(batchNo) {
     const res = await getHarvestPreview(selectedBatch.id)
     if (res.code === 200) {
       previewData.value = res.data
+
+      // 自动回填上游成本参考值（仅新增时，编辑时不覆盖已有值）
+      if (!form.value.id) {
+        if (res.data.seedlingCost && form.value.seedlingCost == null) {
+          form.value.seedlingCost = Number(res.data.seedlingCost)
+        }
+        if (res.data.totalFeedCost && form.value.feedCost == null) {
+          form.value.feedCost = Number(res.data.totalFeedCost)
+        }
+        if (res.data.totalMedicineCost && form.value.medicineCost == null) {
+          form.value.medicineCost = Number(res.data.totalMedicineCost)
+        }
+      }
     }
   } catch (e) {
     console.error('预览加载失败', e)

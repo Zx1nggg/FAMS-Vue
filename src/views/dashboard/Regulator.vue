@@ -1,25 +1,7 @@
 <template>
   <div class="min-h-screen bg-slate-100 flex flex-col font-sans">
     
-    <!-- 顶部导航栏 (监管端采用沉稳的深石板色系) -->
-    <header class="bg-slate-800 text-white h-14 flex items-center justify-between px-6 shadow-md sticky top-0 z-50">
-      <div class="flex items-center gap-3">
-        <ShieldCheck class="w-5 h-5 text-amber-400" />
-        <span class="font-bold text-lg tracking-wide">智渔 FAMS <span class="text-slate-400 text-xs font-normal ml-2">| 政府监管平台</span></span>
-      </div>
-      
-      <div class="flex items-center gap-6 text-sm">
-        <div class="flex items-center gap-2">
-          <div class="w-7 h-7 bg-amber-500 rounded-full flex items-center justify-center font-bold text-xs">王</div>
-          <span>农业局王科长</span>
-        </div>
-        <button @click="handleLogout" class="text-slate-300 hover:text-white transition-colors" title="退出">
-          <LogOut class="w-4 h-4" />
-        </button>
-      </div>
-    </header>
-
-    <!-- 主体内容区 -->
+   <!-- 主体内容区 -->
     <main class="flex-1 p-4 md:p-6 max-w-[1600px] mx-auto w-full">
       <div class="flex justify-between items-end mb-6">
         <div>
@@ -31,9 +13,6 @@
             </span>
             数据实时同步中 | 截至今日 08:00，已接入全区 128 家标准化养殖场数据。
           </p>
-        </div>
-        <div class="text-sm text-slate-500 bg-white px-3 py-1.5 rounded-md border border-slate-200 shadow-sm">
-          系统运行状态：<span class="text-emerald-600 font-medium">良好</span>
         </div>
       </div>
 

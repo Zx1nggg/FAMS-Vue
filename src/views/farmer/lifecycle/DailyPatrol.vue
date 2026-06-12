@@ -123,33 +123,79 @@
               <el-table-column type="expand">
                 <template #default="scope">
                   <div class="p-4 bg-slate-50 border-y border-slate-200" v-loading="expandLoadings[scope.row.id]">
+
+                    <!-- 已出库锁定提示 -->
+                    <div v-if="isBatchHarvested(scope.row.batchNo)" class="mb-4 bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-start gap-2">
+                      <span class="text-amber-500 text-base mt-0.5">⚠️</span>
+                      <div class="text-xs text-amber-700">
+                        <p class="font-bold mb-0.5">关联批次已出库结算</p>
+                        <p class="text-amber-600">历史巡塘数据不可再追加或修改投喂/抽测记录。</p>
+                      </div>
+                    </div>
+
                     <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                      
+
                       <!-- 子功能A：投喂换水记录 -->
                       <div class="bg-white p-4 rounded-xl border border-teal-100 shadow-sm">
                         <h4 class="font-bold text-teal-700 mb-3 flex items-center gap-2">
                           <Droplets class="w-4 h-4" /> 投喂与换水登记
                         </h4>
-                        
+
                         <!-- 历史投喂列表 -->
                         <div v-if="expandData[scope.row.id]?.feedLogs?.length" class="mb-4 space-y-2">
-                          <div v-for="log in expandData[scope.row.id].feedLogs" :key="log.id" class="text-xs bg-teal-50/50 p-2.5 rounded-lg flex justify-between items-center border border-teal-100">
-                            <span class="text-teal-800">
-                              <span class="font-bold">{{log.feedBrand || '未记录品牌'}}</span> 
-                              | 投饵 <span class="text-amber-600 font-bold">{{log.feedAmount}} kg</span> 
-                              | {{log.waterChangeStatus || '未换水'}}
-                            </span>
-                            <el-button link type="danger" @click="delFeedLog(log.id, scope.row)"><Trash2 class="w-3.5 h-3.5"/></el-button>
+                          <div v-for="log in expandData[scope.row.id].feedLogs" :key="log.id" class="text-xs bg-teal-50/50 p-2.5 rounded-lg border border-teal-100">
+                            <!-- 饲料投喂行：仅当有饲料品牌或投量时才展示 -->
+                            <div v-if="log.feedBrand || log.feedAmount" class="flex justify-between items-center">
+                              <span class="text-teal-800">
+                                <span class="font-bold">{{log.feedBrand || '未记录品牌'}}</span>
+                                | 投饵 <span class="text-amber-600 font-bold">{{log.feedAmount}} kg</span>
+                                <template v-if="log.feedTotalAmount">
+                                  <span class="text-gray-400"> × ¥{{log.feedUnitPrice}}/kg</span>
+                                  <span class="font-bold text-teal-600"> = ¥{{log.feedTotalAmount}}</span>
+                                </template>
+                                <template v-if="log.waterChangeStatus"> | {{log.waterChangeStatus}}</template>
+                              </span>
+                              <el-button link type="danger" @click="delFeedLog(log.id, scope.row)" :disabled="isBatchHarvested(scope.row.batchNo)"><Trash2 class="w-3.5 h-3.5"/></el-button>
+                            </div>
+                            <!-- 纯换水（无饲料、无药品）时只显示换水状态和删除按钮 -->
+                            <div v-else-if="log.waterChangeStatus && !log.medicineName" class="flex justify-between items-center">
+                              <span class="text-teal-800">{{log.waterChangeStatus}}</span>
+                              <el-button link type="danger" @click="delFeedLog(log.id, scope.row)" :disabled="isBatchHarvested(scope.row.batchNo)"><Trash2 class="w-3.5 h-3.5"/></el-button>
+                            </div>
+                            <!-- 药品行：有药品时展示，无饲料时去掉顶部边框线 -->
+                            <div v-if="log.medicineName" :class="['text-purple-700 flex items-center gap-1', (log.feedBrand || log.feedAmount) ? 'mt-1 pt-1 border-t border-teal-100' : '']">
+                              💊 {{log.medicineName}}
+                              <span v-if="log.medicineDosage"> | {{log.medicineDosage}} {{log.medicineUnit || ''}}</span>
+                              <span v-if="log.medicineAmount" class="font-bold"> | 药费 ¥{{log.medicineAmount}}</span>
+                            </div>
                           </div>
                         </div>
                         <div v-else class="text-xs text-gray-400 mb-4 px-1">该巡塘点暂无投喂换水记录。</div>
-                        
+
                         <!-- 新增表单 -->
-                        <div class="flex gap-2 items-start mt-auto">
-                          <el-input v-model="expandData[scope.row.id].feedForm.feedBrand" placeholder="饲料品牌" size="small" class="!w-24" />
-                          <el-input-number v-model="expandData[scope.row.id].feedForm.feedAmount" :precision="1" :step="1" :min="0" placeholder="投量(kg)" size="small" class="!w-28" controls-position="right" />
-                          <el-input v-model="expandData[scope.row.id].feedForm.waterChangeStatus" placeholder="换水状态(如:换水30%)" size="small" class="!w-36" />
-                          <el-button type="primary" size="small" class="!bg-teal-600 !border-none" @click="submitFeedLog(scope.row)">追加</el-button>
+                        <div v-if="!isBatchHarvested(scope.row.batchNo)" class="space-y-2 mt-auto">
+                          <!-- 第一行：饲料 -->
+                          <div class="flex gap-2 items-center flex-wrap">
+                            <el-input v-model="expandData[scope.row.id].feedForm.feedBrand" placeholder="饲料品牌" size="small" class="!w-24" />
+                            <el-input-number v-model="expandData[scope.row.id].feedForm.feedAmount" :precision="1" :step="1" :min="0" placeholder="投量(kg)" size="small" class="!w-28" controls-position="right" />
+                            <el-input-number v-model="expandData[scope.row.id].feedForm.feedUnitPrice" :precision="2" :step="0.5" :min="0" placeholder="单价(元/kg)" size="small" class="!w-28" controls-position="right" />
+                            <span v-if="expandData[scope.row.id].feedForm.feedAmount && expandData[scope.row.id].feedForm.feedUnitPrice" class="text-xs text-teal-600 font-bold whitespace-nowrap">
+                              = ¥{{ (expandData[scope.row.id].feedForm.feedAmount * expandData[scope.row.id].feedForm.feedUnitPrice).toFixed(2) }}
+                            </span>
+                          </div>
+                          <!-- 第二行：药品 -->
+                          <div class="flex gap-2 items-center flex-wrap">
+                            <el-input v-model="expandData[scope.row.id].feedForm.medicineName" placeholder="药品名称(可选)" size="small" class="!w-28" />
+                            <el-input-number v-model="expandData[scope.row.id].feedForm.medicineDosage" :precision="1" :step="1" :min="0" placeholder="用量" size="small" class="!w-24" controls-position="right" />
+                            <el-select v-model="expandData[scope.row.id].feedForm.medicineUnit" placeholder="单位" size="small" class="!w-20">
+                              <el-option label="ml" value="ml" />
+                              <el-option label="g" value="g" />
+                              <el-option label="袋" value="袋" />
+                            </el-select>
+                            <el-input-number v-model="expandData[scope.row.id].feedForm.medicineAmount" :precision="2" :step="1" :min="0" placeholder="药费(元)" size="small" class="!w-28" controls-position="right" />
+                            <el-input v-model="expandData[scope.row.id].feedForm.waterChangeStatus" placeholder="换水状态" size="small" class="!w-32" />
+                            <el-button type="primary" size="small" class="!bg-teal-600 !border-none" @click="submitFeedLog(scope.row)">追加</el-button>
+                          </div>
                         </div>
                       </div>
 
@@ -158,32 +204,32 @@
                         <div v-if="!scope.row.batchNo" class="absolute inset-0 bg-white/80 backdrop-blur-sm z-10 flex items-center justify-center rounded-xl border border-dashed border-gray-300">
                           <span class="text-sm text-gray-500 font-medium"><AlertCircle class="w-4 h-4 inline mr-1" /> 此巡塘记录未关联批次，无法录入生物数据</span>
                         </div>
-                        
+
                         <h4 class="font-bold text-blue-700 mb-3 flex items-center gap-2">
                           <Scale class="w-4 h-4" /> 生长抽测与死亡登记
                         </h4>
-                        
+
                         <div class="grid grid-cols-2 gap-3">
                           <el-form-item label="均长(cm)" class="!mb-0" label-width="70px">
-                            <el-input-number v-model="expandData[scope.row.id].growthForm.avgLength" :precision="1" :step="0.5" :min="0" size="small" class="!w-full" controls-position="right"/>
+                            <el-input-number v-model="expandData[scope.row.id].growthForm.avgLength" :precision="1" :step="0.5" :min="0" size="small" class="!w-full" controls-position="right" :disabled="isBatchHarvested(scope.row.batchNo)"/>
                           </el-form-item>
                           <el-form-item label="均重(g)" class="!mb-0" label-width="70px">
-                            <el-input-number v-model="expandData[scope.row.id].growthForm.avgWeight" :precision="1" :step="0.5" :min="0" size="small" class="!w-full" controls-position="right"/>
+                            <el-input-number v-model="expandData[scope.row.id].growthForm.avgWeight" :precision="1" :step="0.5" :min="0" size="small" class="!w-full" controls-position="right" :disabled="isBatchHarvested(scope.row.batchNo)"/>
                           </el-form-item>
                           <el-form-item label="日常损耗" class="!mb-0" label-width="70px">
-                            <el-input-number v-model="expandData[scope.row.id].growthForm.routineDeathCount" :min="0" :step="1" size="small" class="!w-full" controls-position="right" placeholder="尾"/>
+                            <el-input-number v-model="expandData[scope.row.id].growthForm.routineDeathCount" :min="0" :step="1" size="small" class="!w-full" controls-position="right" placeholder="尾" :disabled="isBatchHarvested(scope.row.batchNo)"/>
                           </el-form-item>
                           <el-form-item label="突发死亡" class="!mb-0" label-width="70px">
-                            <el-input-number v-model="expandData[scope.row.id].growthForm.abnormalDeathCount" :min="0" :step="1" size="small" class="!w-full" controls-position="right" placeholder="尾"/>
+                            <el-input-number v-model="expandData[scope.row.id].growthForm.abnormalDeathCount" :min="0" :step="1" size="small" class="!w-full" controls-position="right" placeholder="尾" :disabled="isBatchHarvested(scope.row.batchNo)"/>
                           </el-form-item>
-                          
+
                           <el-form-item label="异常原因" class="!mb-0 col-span-2" label-width="70px" v-if="expandData[scope.row.id]?.growthForm?.abnormalDeathCount > 0">
-                            <el-input v-model="expandData[scope.row.id].growthForm.abnormalReason" size="small" placeholder="突发死亡必填：如用药不当、缺氧" class="!w-full border-red-200" />
+                            <el-input v-model="expandData[scope.row.id].growthForm.abnormalReason" size="small" placeholder="突发死亡必填：如用药不当、缺氧" class="!w-full border-red-200" :disabled="isBatchHarvested(scope.row.batchNo)" />
                           </el-form-item>
                         </div>
-                        
+
                         <div class="flex justify-end mt-3 border-t border-blue-50 pt-3">
-                          <el-button type="primary" size="small" class="!bg-blue-600 !border-none" @click="submitGrowthLog(scope.row)">
+                          <el-button type="primary" size="small" class="!bg-blue-600 !border-none" @click="submitGrowthLog(scope.row)" :disabled="isBatchHarvested(scope.row.batchNo)">
                             <Save class="w-3.5 h-3.5 mr-1" />
                             {{ expandData[scope.row.id]?.growthForm?.id ? '更新抽测数据' : '保存抽测数据' }}
                           </el-button>
@@ -224,9 +270,12 @@
                   </span>
                 </template>
               </el-table-column>
-              <el-table-column label="操作" align="center" width="90" fixed="right">
+              <el-table-column label="操作" align="center" width="100" fixed="right">
                 <template #default="scope">
-                  <el-button link type="danger" @click="handleDeleteLog(scope.row)"><Trash2 class="w-4 h-4"/></el-button>
+                  <el-tooltip v-if="isBatchHarvested(scope.row.batchNo)" content="关联批次已出库，历史数据已锁定" placement="top">
+                    <span class="text-xs text-gray-300 cursor-not-allowed">已锁定</span>
+                  </el-tooltip>
+                  <el-button v-else link type="danger" @click="handleDeleteLog(scope.row)"><Trash2 class="w-4 h-4"/></el-button>
                 </template>
               </el-table-column>
             </el-table>
@@ -315,7 +364,7 @@ import {
 
 // 导入主记录与SOP API
 import {
-  getPondPage, getStockingPage,
+  getPondPage, getStockingPage, getPurchasePage,
   getPatrolLogPage, addPatrolLog, delPatrolLog,
   getPondTaskPage, checkOffPondTask, batchCheckOffPondTask,
   // 🌟 新增导入展开行的子业务 API
@@ -330,6 +379,21 @@ const currentFarmName = ref(sessionStorage.getItem('current_farm_name') || '未�
 // === 字典与下拉数据 ===
 const pondOptions = ref([])
 const stockBatches = ref([])  // 当前选中池塘已投放的批次 (batchNo + seedlingName)
+const allBatches = ref([])    // 当前养殖场全部批次（用于判断已出库状态）
+
+// 已出库结算的批次号集合，用于前端快速判断并锁定关联的巡塘记录
+const harvestedBatchNos = computed(() => {
+  return new Set(
+    allBatches.value
+      .filter(b => b.batchStatus === 3)
+      .map(b => b.batchNo)
+  )
+})
+
+const isBatchHarvested = (batchNo) => {
+  if (!batchNo) return false
+  return harvestedBatchNos.value.has(batchNo)
+}
 
 // === 区域A：新增巡塘表单 ===
 const patrolFormRef = ref(null)
@@ -358,7 +422,7 @@ const rules = {
   waterTemp: [{ required: true, message: '请输入水温', trigger: 'blur' }]
 }
 
-// 选中池塘后动态拉取其投放记录，批次下拉仅显示该池塘已有的批次
+// 选中池塘后动态拉取其投放记录，批次下拉仅显示该池塘已有的批次（排除已出库的）
 watch(() => patrolForm.value.pondId, async (newPondId) => {
   patrolForm.value.batchNo = ''
   stockBatches.value = []
@@ -370,6 +434,7 @@ watch(() => patrolForm.value.pondId, async (newPondId) => {
       stockBatches.value = res.data.records
         .filter(r => r.batchNo && !seen.has(r.batchNo) && seen.add(r.batchNo))
         .map(r => ({ batchNo: r.batchNo, seedlingName: r.seedlingName || '未知' }))
+        .filter(r => !isBatchHarvested(r.batchNo)) // 已出库批次不可新增巡塘记录
     }
   } catch (e) { /* ignore */ }
 })
@@ -418,7 +483,16 @@ const hasPendingTasks = computed(() => {
 const expandData = ref({}) // 存储按 patrolLogId 划分的子表单和子列表数据
 const expandLoadings = ref({}) // 存储展开行各自的 loading 状态
 
-const getEmptyFeedForm = () => ({ feedBrand: '', feedAmount: undefined, waterChangeStatus: '' })
+const getEmptyFeedForm = () => ({
+  feedBrand: '',
+  feedAmount: undefined,
+  feedUnitPrice: undefined,
+  waterChangeStatus: '',
+  medicineName: '',
+  medicineDosage: undefined,
+  medicineUnit: '',
+  medicineAmount: undefined,
+})
 const getEmptyGrowthForm = () => ({ id: undefined, avgLength: undefined, avgWeight: undefined, routineDeathCount: undefined, abnormalDeathCount: undefined, abnormalReason: '' })
 
 // === 初始化 ===
@@ -435,6 +509,9 @@ const loadDictionaries = async () => {
   try {
     const pondRes = await getPondPage({ pageNum: 1, pageSize: 100, farmId: currentFarmId.value })
     if (pondRes.code === 200) pondOptions.value = pondRes.data.records
+    // 加载全部批次，用于判断已出库状态
+    const batchRes = await getPurchasePage({ pageNum: 1, pageSize: 200, farmId: currentFarmId.value })
+    if (batchRes.code === 200) allBatches.value = batchRes.data.records
   } catch (e) {
     console.error('辅助字典加载失败', e)
   }
@@ -539,8 +616,8 @@ const loadExpandData = async (row) => {
 // 追加投喂记录
 const submitFeedLog = async (row) => {
   const form = expandData.value[row.id].feedForm
-  if (!form.feedAmount && !form.waterChangeStatus) {
-    return ElMessage.warning('投喂量与换水状态不能同时为空')
+  if (!form.feedAmount && !form.medicineName && !form.waterChangeStatus) {
+    return ElMessage.warning('请至少填写投喂量、药品或换水状态中的一项')
   }
   
   const submitData = {

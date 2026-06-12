@@ -85,6 +85,16 @@
               <span class="text-xs text-gray-500">{{ scope.row.unitQty }}{{ scope.row.purchaseUnit }} × {{ scope.row.densityPerUnit }}尾</span>
             </template>
           </el-table-column>
+          <el-table-column label="单价(元/件)" prop="unitPrice" align="right" width="120">
+            <template #default="scope">
+              <span class="text-gray-700">{{ scope.row.unitPrice ?? '-' }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="总金额(元)" prop="totalAmount" align="right" width="140">
+            <template #default="scope">
+              <span class="font-bold text-teal-600">{{ scope.row.totalAmount?.toLocaleString() ?? '-' }}</span>
+            </template>
+          </el-table-column>
           <el-table-column label="状态" prop="batchStatus" align="center" width="110">
             <template #default="scope">
               <el-tag v-if="scope.row.batchStatus === 0" type="warning" effect="light" round>待检疫</el-tag>
@@ -101,7 +111,9 @@
           </el-table-column>
           <el-table-column label="操作" align="center" width="160" fixed="right">
             <template #default="scope">
-              <el-button link type="primary" @click="handleUpdate(scope.row)">编辑</el-button>
+              <el-button link type="primary" :disabled="scope.row.batchStatus === 3" @click="handleUpdate(scope.row)">
+                {{ scope.row.batchStatus === 3 ? '已锁定' : '编辑' }}
+              </el-button>
               <el-button link type="danger" @click="handleDelete(scope.row)" :disabled="scope.row.batchStatus >= 2">
                 删除
               </el-button>
@@ -126,7 +138,16 @@
     <!-- 弹窗表单 -->
     <el-dialog :title="dialogTitle" v-model="dialogVisible" width="600px" append-to-body class="!rounded-2xl">
       <el-form ref="formRef" :model="form" :rules="rules" label-width="110px" class="pr-6 mt-4">
-        
+
+        <!-- 已出库锁定提示 -->
+        <div v-if="isEditLocked" class="mb-4 bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-start gap-2">
+          <span class="text-amber-500 text-base mt-0.5">⚠️</span>
+          <div class="text-xs text-amber-700">
+            <p class="font-bold mb-0.5">该批次已出库结算</p>
+            <p class="text-amber-600">历史采购数据不可再编辑，所有字段已锁定。</p>
+          </div>
+        </div>
+
         <div class="bg-blue-50/50 p-4 rounded-xl border border-blue-100 mb-6 flex gap-4">
           <div class="flex-1">
             <el-form-item label="批次号" prop="batchNo" class="!mb-0">
@@ -135,19 +156,19 @@
           </div>
           <div class="flex-1">
             <el-form-item label="入库日期" prop="purchaseDate" class="!mb-0">
-              <el-date-picker v-model="form.purchaseDate" type="date" placeholder="选择日期" value-format="YYYY-MM-DD" class="!w-full" />
+              <el-date-picker v-model="form.purchaseDate" type="date" placeholder="选择日期" value-format="YYYY-MM-DD" class="!w-full" :disabled="isEditLocked" />
             </el-form-item>
           </div>
         </div>
 
         <el-form-item label="供应商来源" prop="supplierId">
-          <el-select v-model="form.supplierId" placeholder="请选择苗种供应商" filterable class="!w-full">
+          <el-select v-model="form.supplierId" placeholder="请选择苗种供应商" filterable class="!w-full" :disabled="isEditLocked">
             <el-option v-for="item in supplierOptions" :key="item.id" :label="item.supplierName" :value="item.id" />
           </el-select>
         </el-form-item>
 
         <el-form-item label="苗种品种" prop="seedlingId">
-          <el-select v-model="form.seedlingId" placeholder="请选择采购苗种品种" filterable class="!w-full">
+          <el-select v-model="form.seedlingId" placeholder="请选择采购苗种品种" filterable class="!w-full" :disabled="isEditLocked">
             <el-option v-for="item in seedlingOptions" :key="item.id" :label="item.categoryName" :value="item.id" />
           </el-select>
         </el-form-item>
@@ -155,20 +176,20 @@
         <!-- 单位与密度联动计算区域 -->
         <div class="grid grid-cols-2 gap-2">
           <el-form-item label="包装单位" prop="purchaseUnit">
-            <el-select v-model="form.purchaseUnit" placeholder="单位" class="!w-full">
+            <el-select v-model="form.purchaseUnit" placeholder="单位" class="!w-full" :disabled="isEditLocked">
               <el-option label="袋 (Bag)" value="袋" />
               <el-option label="箱 (Box)" value="箱" />
               <el-option label="车 (Truck)" value="车" />
             </el-select>
           </el-form-item>
           <el-form-item label="包装数量" prop="unitQty">
-            <el-input-number v-model="form.unitQty" :min="1" :step="1" class="!w-full" placeholder="件数" />
+            <el-input-number v-model="form.unitQty" :min="1" :step="1" class="!w-full" placeholder="件数" :disabled="isEditLocked" />
           </el-form-item>
         </div>
 
         <div class="grid grid-cols-2 gap-2">
           <el-form-item label="单位密度(尾)" prop="densityPerUnit">
-            <el-input-number v-model="form.densityPerUnit" :min="1" :step="100" class="!w-full" placeholder="如: 2000" />
+            <el-input-number v-model="form.densityPerUnit" :min="1" :step="100" class="!w-full" placeholder="如: 2000" :disabled="isEditLocked" />
           </el-form-item>
           <el-form-item label="预估总数(尾)" prop="estimatedTotalQty">
             <!-- 只读计算属性，使用 :model-value 避免写入警告 -->
@@ -178,24 +199,35 @@
           </el-form-item>
         </div>
 
+        <div class="grid grid-cols-2 gap-2">
+          <el-form-item label="单价(元/件)" prop="unitPrice">
+            <el-input-number v-model="form.unitPrice" :min="0" :precision="2" :step="10" class="!w-full" placeholder="如: 200" :disabled="isEditLocked" />
+          </el-form-item>
+          <el-form-item label="采购金额" prop="totalAmount">
+            <el-input :model-value="computedTotalAmount" disabled class="font-bold text-teal-600">
+              <template #append>元</template>
+            </el-input>
+          </el-form-item>
+        </div>
+
         <el-divider class="dashed-divider" />
 
         <el-form-item label="检疫状态" prop="batchStatus">
-          <el-radio-group v-model="form.batchStatus">
+          <el-radio-group v-model="form.batchStatus" :disabled="isEditLocked">
             <el-radio :label="0">待检疫</el-radio>
             <el-radio :label="1">已检疫(合规)</el-radio>
           </el-radio-group>
         </el-form-item>
 
         <el-form-item label="检疫合格证号" prop="quarantineCertNo" v-if="form.batchStatus === 1">
-          <el-input v-model="form.quarantineCertNo" placeholder="请输入产地检疫合格证编号" clearable />
+          <el-input v-model="form.quarantineCertNo" placeholder="请输入产地检疫合格证编号" clearable :disabled="isEditLocked" />
         </el-form-item>
 
       </el-form>
       <template #footer>
         <div class="dialog-footer">
           <el-button @click="dialogVisible = false" class="!rounded-lg">取 消</el-button>
-          <el-button type="primary" @click="submitForm" class="!rounded-lg !bg-teal-600 !border-none hover:!bg-teal-700" :loading="submitLoading">确 定 登 记</el-button>
+          <el-button type="primary" @click="submitForm" class="!rounded-lg !bg-teal-600 !border-none hover:!bg-teal-700" :loading="submitLoading" :disabled="isEditLocked">确 定 登 记</el-button>
         </div>
       </template>
     </el-dialog>
@@ -241,6 +273,7 @@ const form = ref({
   unitQty: 1,
   densityPerUnit: 2000,
   estimatedTotalQty: 0,
+  unitPrice: undefined,
   batchStatus: 0,
   quarantineCertNo: ''
 })
@@ -256,6 +289,18 @@ const computedTotal = computed(() => {
   const qty = Number(form.value.unitQty) || 0
   const density = Number(form.value.densityPerUnit) || 0
   return (qty * density).toLocaleString()
+})
+
+// 计算属性：采购金额 = 包装数量 × 单价
+const computedTotalAmount = computed(() => {
+  const qty = Number(form.value.unitQty) || 0
+  const price = Number(form.value.unitPrice) || 0
+  return qty > 0 && price > 0 ? (qty * price).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-'
+})
+
+// 编辑模式下，若批次已出库结算则锁定表单
+const isEditLocked = computed(() => {
+  return !!(form.value.id && form.value.batchStatus === 3)
 })
 
 // 表单验证规则
@@ -339,6 +384,7 @@ const handleAdd = () => {
     unitQty: 1,
     densityPerUnit: 2000,
     estimatedTotalQty: 0,
+    unitPrice: undefined,
     batchStatus: 0,
     quarantineCertNo: ''
   }

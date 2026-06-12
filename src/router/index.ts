@@ -5,6 +5,7 @@ import FarmerDashboard from '../views/dashboard/Farmer.vue' // 原来的 Index.v
 import RegulatorDashboard from '../views/dashboard/Regulator.vue'
 // import AdminDashboard from '../views/dashboard/Admin.vue'
 import FarmerLayout from '../layout/FarmerLayout.vue'
+import RegulatorLayout from '../layout/RegulatorLayout.vue'
 import FarmManagement from '../views/farmer/base/FarmManagement.vue'
 import PondManagement from '../views/farmer/base/PondManagement.vue'
 import SupplierManagement from '../views/farmer/base/SupplierManagement.vue'
@@ -105,6 +106,12 @@ const routes = [
         meta: { title: '出塘结算管理' }
       },
       {
+        path: 'lifecycle/trace',
+        name: 'Traceability',
+        component: () => import('../views/farmer/lifecycle/Traceability.vue'),
+        meta: { title: '养殖追溯查询' }
+      },
+      {
         path: 'profile',
         name: 'FarmerProfile',
         component: () => import('../views/farmer/Profile.vue'),
@@ -119,9 +126,30 @@ const routes = [
     ]
   },
   { 
-    path: '/dashboard/regulator', 
-    name: 'RegulatorDashboard',
-    component: RegulatorDashboard 
+    path: '/regulator',
+    name: 'Regulator',
+    component: RegulatorLayout,
+    redirect: '/regulator/dashboard', // 默认重定向到工作台
+    children: [
+      {
+        path: 'dashboard',
+        name: 'RegulatorDashboard',
+        component: () => import('../views/dashboard/Regulator.vue'),
+        meta: { title: '监管工作台' }
+      },
+      {
+        path: 'profile',
+        name: 'RegulatorProfile',
+        component:() => import('../views/regulator/Profile.vue'),
+        meta: { title: '个人主页'}
+      },
+      {
+        path: 'settings',
+        name: 'RegulatorSettings',
+        component:() => import('../views/regulator/Settings.vue'),
+        meta: { title: '账号设置'}
+      }
+    ]
   },
   // { path: '/dashboard/admin', component: AdminDashboard }
 

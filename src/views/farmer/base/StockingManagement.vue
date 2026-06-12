@@ -108,8 +108,10 @@
 
           <el-table-column label="操作" align="center" width="140" fixed="right">
             <template #default="scope">
-              <el-button link type="primary" @click="handleUpdate(scope.row)">编辑</el-button>
-              <el-button link type="danger" @click="handleDelete(scope.row)">删除</el-button>
+              <el-button link type="primary" :disabled="scope.row.batchStatus === 3" @click="handleUpdate(scope.row)">
+                {{ scope.row.batchStatus === 3 ? '已锁定' : '编辑' }}
+              </el-button>
+              <el-button link type="danger" :disabled="scope.row.batchStatus === 3" @click="handleDelete(scope.row)">删除</el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -131,13 +133,23 @@
     <!-- 弹窗表单 -->
     <el-dialog :title="dialogTitle" v-model="dialogVisible" width="550px" append-to-body class="!rounded-2xl">
       <el-form ref="formRef" :model="form" :rules="rules" label-width="100px" class="pr-6 mt-4">
-        
+
         <div class="mb-4 pb-2 border-b border-gray-100 flex items-center gap-2 text-sm font-bold text-gray-700">
           <MapPin class="w-4 h-4 text-emerald-500"/> 将批次资产绑定至物理空间
         </div>
 
+        <!-- 已出库锁定提示 -->
+        <div v-if="isEditLocked" class="mb-4 bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-start gap-2">
+          <span class="text-amber-500 text-base mt-0.5">⚠️</span>
+          <div class="text-xs text-amber-700">
+            <p class="font-bold mb-0.5">该投放记录关联的批次已出库结算</p>
+            <p class="text-amber-600">池塘与批次不可更改，仅允许修改投放件数用于纠错。</p>
+          </div>
+        </div>
+
         <el-form-item label="投放池塘" prop="pondId">
-          <el-select v-model="form.pondId" placeholder="请选择目标池塘" class="!w-full" filterable>
+          <el-select v-model="form.pondId" placeholder="请选择目标池塘" class="!w-full" filterable
+            :disabled="isEditLocked">
             <el-option v-for="pond in pondOptions" :key="pond.id" :label="pond.pondName" :value="pond.id">
               <span style="float: left">{{ pond.pondName }}</span>
               <span style="float: right; color: #8492a6; font-size: 13px">{{ pond.areaMu }} 亩</span>
@@ -146,7 +158,7 @@
         </el-form-item>
 
         <el-form-item label="苗种批次" prop="batchId">
-          <el-select v-model="form.batchId" placeholder="请选择要下塘的采购批次" class="!w-full" filterable :disabled="!form.pondId">
+          <el-select v-model="form.batchId" placeholder="请选择要下塘的采购批次" class="!w-full" filterable :disabled="!form.pondId || isEditLocked">
             <el-option v-for="batch in availableBatches" :key="batch.id" :label="batch.batchNo" :value="batch.id">
               <span style="float: left">
                 {{ batch.batchNo }} 
@@ -270,6 +282,11 @@ const calculatedTotal = computed(() => {
   const units = form.value.stockedUnits || 0
   const density = selectedBatch.value?.densityPerUnit || 0
   return units * density
+})
+
+// 编辑模式下，若原始关联批次已出库结算，则锁定表单不可更改池塘/批次
+const isEditLocked = computed(() => {
+  return !!(form.value.id && form.value.batchStatus === 3)
 })
 
 // 切换池塘时清空批次选择，防止跨养殖场残留
