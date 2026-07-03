@@ -176,14 +176,30 @@ router.beforeEach((to, from, next) => {
   // 需要认证的路由前缀
   const needAuth = to.path.startsWith('/farmer')
     || to.path.startsWith('/dashboard')
+    || to.path.startsWith('/regulator')
     || to.path.startsWith('/admin')
 
   if (needAuth && !userStr) {
     // 未登录，跳转到门户页
     next('/')
-  } else {
-    next()
+    return
   }
+
+  // 监管方路由角色校验：仅 REGULATOR / ADMIN 可访问
+  if (to.path.startsWith('/regulator') && userStr) {
+    try {
+      const user = JSON.parse(userStr)
+      if (user.role !== 'REGULATOR' && user.role !== 'ADMIN') {
+        next('/')
+        return
+      }
+    } catch {
+      next('/')
+      return
+    }
+  }
+
+  next()
 })
 
 export default router

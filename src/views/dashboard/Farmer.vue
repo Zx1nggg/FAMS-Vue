@@ -258,20 +258,28 @@
           <div v-if="alarms.length > 0" class="space-y-3 max-h-80 overflow-y-auto custom-scrollbar">
             <div v-for="alarm in alarms" :key="alarm.id"
                  class="rounded-xl p-4 border"
-                 :class="alarmLevelClass(alarm.alarmLevel)">
+                 :class="alarmLevelClass(alarm.severity)">
               <div class="flex justify-between items-start mb-1">
-                <span class="text-sm font-bold" :class="alarmLevelTextClass(alarm.alarmLevel)">
-                  {{ alarmTypeLabel(alarm.alarmType) }}
+                <span class="text-sm font-bold" :class="alarmLevelTextClass(alarm.severity)">
+                  {{ alarm.title || alarmTypeLabel(alarm.alarmCode) }}
                 </span>
                 <span class="text-[10px] px-1.5 py-0.5 rounded border"
-                      :class="alarmLevelBadgeClass(alarm.alarmLevel)">
-                  {{ alarmLevelLabel(alarm.alarmLevel) }}
+                      :class="alarmLevelBadgeClass(alarm.severity)">
+                  {{ alarmLevelLabel(alarm.severity) }}
                 </span>
               </div>
-              <p class="text-xs leading-relaxed" :class="alarmLevelTextClass(alarm.alarmLevel)">
-                {{ alarm.alarmContent }}
+              <p class="text-xs leading-relaxed" :class="alarmLevelTextClass(alarm.severity)">
+                {{ alarm.message }}
               </p>
-              <p class="text-[10px] text-gray-400 mt-2">{{ formatTime(alarm.createTime) }}</p>
+              <div class="mt-2 flex items-center justify-between gap-2">
+                <p class="text-[10px] text-gray-400">{{ formatTime(alarm.lastOccurredAt) }}</p>
+                <button
+                  v-if="alarm.status === 0"
+                  class="text-[10px] px-2 py-1 rounded bg-red-50 text-red-600 hover:bg-red-100"
+                  @click="confirmAlarm(alarm.id)"
+                >确认告警</button>
+                <span v-else class="text-[10px] text-gray-400">{{ alarmStatusLabel(alarm.status) }}</span>
+              </div>
             </div>
           </div>
 
@@ -298,7 +306,7 @@ import {
   Thermometer, Waves, Droplet, TrendingUp, TrendingDown, CheckCircle2,
   Minus, AlertTriangle, Activity, Box, Truck, MapPin, Stethoscope, RefreshCw, Home
 } from 'lucide-vue-next'
-import { getLatestSensorData, getLatestAllSensorData, getSensorDataHistory, getAlarmPage, getPondPage, getGrowthChart, getStockingPage } from '@/api/base'
+import { getLatestSensorData, getLatestAllSensorData, getSensorDataHistory, getAlarmPage, acknowledgeAlarm, getPondPage, getGrowthChart, getStockingPage } from '@/api/base'
 
 const router = useRouter()
 
@@ -365,7 +373,7 @@ const phStatus = computed(() => {
 
 // ==================== 告警工具方法 ====================
 const alarmTypeLabel = (type) => {
-  const map = { IOT_DO: '溶解氧偏低告警', IOT_TEMP: '水温异常告警', IOT_PH: 'pH 值异常告警', BIOLOGY: '生物异常告警' }
+  const map = { IOT_DO_LOW: '溶解氧偏低告警', IOT_TEMP_HIGH: '水温过高告警', IOT_PH_LOW: 'pH过低告警', IOT_PH_HIGH: 'pH过高告警', BIOLOGY_MORTALITY: '生物死亡异常告警' }
   return map[type] || type || '系统告警'
 }
 const alarmLevelLabel = (level) => {
@@ -443,12 +451,23 @@ const loadAlarms = async () => {
     const res = await getAlarmPage({
       pageNum: 1, pageSize: 10,
       farmId: currentFarmId.value,
-      isHandled: 0
+      activeOnly: true
     })
     if (res.code === 200 && res.data?.records) {
       alarms.value = res.data.records
     }
   } catch (e) { /* ignore */ }
+}
+
+const alarmStatusLabel = (status) => ({ 0: '待确认', 1: '已确认', 2: '处理中' }[status] || '已结束')
+
+const confirmAlarm = async (id) => {
+  try {
+    await acknowledgeAlarm(id, '养殖户已确认告警')
+    await loadAlarms()
+  } catch (e) {
+    console.error('确认告警失败', e)
+  }
 }
 
 const loadAllData = async () => {

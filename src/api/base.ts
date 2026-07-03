@@ -86,7 +86,11 @@ export const getSensorDataHistory = (pondId: number, hours?: number) => request(
 
 // ==================== 告警记录 ====================
 export const getAlarmPage = (params: Record<string, any>) => request({ url: '/log/alarm-record/list', method: 'get', params })
-export const handleAlarm = (id: string | number) => request({ url: `/log/alarm-record/${id}/handle`, method: 'put' })
+export const acknowledgeAlarm = (id: string | number, remark?: string) => request({ url: `/log/alarm-record/${id}/acknowledge`, method: 'put', data: { remark } })
+export const startProcessingAlarm = (id: string | number, remark?: string) => request({ url: `/log/alarm-record/${id}/start-processing`, method: 'put', data: { remark } })
+export const resolveAlarm = (id: string | number, remark: string) => request({ url: `/log/alarm-record/${id}/resolve`, method: 'put', data: { remark } })
+export const closeAlarm = (id: string | number, remark?: string) => request({ url: `/log/alarm-record/${id}/close`, method: 'put', data: { remark } })
+export const reopenAlarm = (id: string | number, remark?: string) => request({ url: `/log/alarm-record/${id}/reopen`, method: 'put', data: { remark } })
 
 // ==================== 出塘结算管理 ====================
 export const getHarvestPage = (params: Record<string, any>) => request({ url: '/lifecycle/harvest-record/list', method: 'get', params })

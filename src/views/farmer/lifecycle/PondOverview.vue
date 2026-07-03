@@ -426,7 +426,7 @@ const loadPatrolAndAlarm = async () => {
   try {
     const [patrolRes, alarmRes] = await Promise.all([
       getPatrolLogPage({ pageNum: 1, pageSize: 500, farmId: currentFarmId.value }),
-      getAlarmPage({ pageNum: 1, pageSize: 1, farmId: currentFarmId.value, isHandled: 0 })
+      getAlarmPage({ pageNum: 1, pageSize: 1, farmId: currentFarmId.value, activeOnly: true })
     ])
     // 巡塘：取每个池塘最近一次 patrolTime
     if (patrolRes.code === 200 && patrolRes.data) {
