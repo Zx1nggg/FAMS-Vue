@@ -1,6 +1,3 @@
-/** 监管方 TypeScript 类型定义 — 对应后端 regulator 模块 VO */
-
-// ========== Dashboard ==========
 export interface DashboardStats {
   totalFarms: number
   totalLiveStock: number
@@ -25,13 +22,12 @@ export interface DashboardAlert {
 export interface DashboardWatchlist {
   farmId: number
   farmName: string
-  riskType: string         // 环境异常 / 违规操作 / 死亡率异常
+  riskType: string
   riskDescription: string
   alarmCount: number
   riskMetric: string
 }
 
-// ========== GIS ==========
 export interface FarmGeo {
   farmId: number
   farmName: string
@@ -43,11 +39,10 @@ export interface FarmGeo {
   alertStatus: 'normal' | 'warning' | 'critical'
   activeAlarmCount: number
   mainSpecies: string
-  stockCount?: number // 当前存栏原始尾数
-  stockAmount: number // 当前存栏万尾数（兼容旧接口）
+  stockCount?: number
+  stockAmount: number
 }
 
-// ========== Trace ==========
 export interface TraceChain {
   batchNo: string
   seedlingName: string
@@ -61,10 +56,69 @@ export interface TraceNode {
   detail: Record<string, any>
 }
 
-// ========== 分页通用 ==========
 export interface PageResult<T> {
   records: T[]
   total: number
   size: number
   current: number
+}
+
+export interface AlertStats {
+  totalCount: number
+  activeCount: number
+  pendingCount: number
+  processingCount: number
+  resolvedCount: number
+  criticalCount: number
+  todayNewCount: number
+  byType: Record<string, number>
+  byLevel: Record<string, number>
+}
+
+export interface AlertItem {
+  id: number
+  farmId: number
+  farmName?: string
+  pondId?: number | null
+  pondName?: string
+  alarmCode: string
+  title: string
+  message: string
+  sourceType: string
+  severity: number
+  status: number
+  metricCode?: string
+  triggerValue?: number
+  thresholdOperator?: string
+  thresholdValue?: number
+  thresholdValueHigh?: number
+  metricUnit?: string
+  occurrenceCount: number
+  firstOccurredAt?: string
+  lastOccurredAt?: string
+  createdAt?: string
+  resolutionRemark?: string
+}
+
+export interface AlertTrend {
+  date: string
+  totalCount: number
+  criticalCount: number
+  warningCount: number
+  infoCount: number
+}
+
+export interface IotRealtimeAlert {
+  pondId: number
+  pondName: string
+  farmId: number
+  farmName: string
+  waterTemp?: number
+  doLevel?: number
+  phLevel?: number
+  alertField: 'waterTemp' | 'doLevel' | 'phLevel'
+  currentValue: number
+  thresholdMin?: number
+  thresholdMax?: number
+  dataTime: string
 }

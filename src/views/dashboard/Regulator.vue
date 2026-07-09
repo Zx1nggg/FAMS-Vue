@@ -11,8 +11,8 @@
               <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
               <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
             </span>
-            数据实时同步中 | 截至今日 08:00，已接入全区
-            <span class="font-semibold text-slate-700">{{ stats.totalFarms || '—' }}</span> 家标准化养殖场数据。
+            数据实时同步中 | 截至{{ currentDate }}，已接入全区
+            <span class="font-semibold text-slate-700">{{ stats.totalFarms || '-' }}</span> 家标准化养殖场数据。
           </p>
         </div>
         <!-- 手动刷新按钮 -->
@@ -244,7 +244,7 @@ import { useRouter } from 'vue-router'
 
 const router = useRouter()
 
-// ── 状态 ────────────────────────────────────────────────
+// 状态
 const loading = ref(false)
 const loadingStats = ref(false)
 const loadingGeo = ref(false)
@@ -265,14 +265,14 @@ const traceKeyword = ref('')
 const traceResult = ref<TraceChain | null>(null)
 const traceError = ref('')
 
-// ── 计算属性 ────────────────────────────────────────────
+// 计算属性
 const geoSummary = computed(() => {
   const normal = farmGeoList.value.filter(f => f.alertStatus === 'normal').length
   const alert = farmGeoList.value.filter(f => f.alertStatus !== 'normal').length
   return { normal, alert }
 })
-
-// ── API 调用 ────────────────────────────────────────────
+const currentDate = ref('')
+// API 调用 
 
 async function fetchStats() {
   loadingStats.value = true
@@ -335,7 +335,7 @@ async function refreshAll() {
   loading.value = false
 }
 
-// ── 登出 ────────────────────────────────────────────────
+// 登出
 
 async function handleLogout() {
   try {
@@ -349,14 +349,26 @@ async function handleLogout() {
     router.push('/login')
   }
 }
+// 计算当前时间
+const updateDate = () => {
+  const now = new Date()
 
-// ── 定时刷新 ────────────────────────────────────────────
+  currentDate.value = now.toLocaleDateString('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  })
+}
+
+//  定时刷新 
 let refreshTimer: ReturnType<typeof setInterval> | null = null
 
 onMounted(() => {
+  updateDate()
   refreshAll()
   // 每 5 分钟自动刷新
   refreshTimer = setInterval(refreshAll, 5 * 60 * 1000)
+
 })
 
 onBeforeUnmount(() => {

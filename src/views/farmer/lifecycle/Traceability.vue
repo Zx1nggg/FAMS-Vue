@@ -296,11 +296,7 @@ import {
 } from 'lucide-vue-next'
 
 // 🌟 引入真实后端 API
-import {
-  getPurchasePage, getStockingPage, getPatrolLogPage,
-  getHarvestPage, getPondFeedLogPage, getBatchGrowthLogPage,
-  getHarvestPreview
-} from '@/api/base'
+import { getFarmerTraceDetail } from '@/api/base'
 
 const searchBatchNo = ref('')
 const loading = ref(false)
@@ -353,172 +349,11 @@ const handleSearch = async () => {
   traceData.value = null
 
   try {
-    // 1. 寻找源头：查采购批次表
-    const purchaseRes = await getPurchasePage({ batchNo, pageNum: 1, pageSize: 1 })
-    const purchaseData = purchaseRes.data?.records?.[0]
-
-    if (!purchaseData) {
-      loading.value = false
-      return ElMessage.warning(`未找到批次号为 ${batchNo} 的溯源数据`)
-    }
-
-    const batchId = purchaseData.id
-
-    // 2. 并发拉取：投放 / 出塘 / 生长抽测 / 结算预览（聚合统计用）
-    const [stockingRes, harvestRes, previewRes, growthRes] = await Promise.all([
-      getStockingPage({ batchId, pageNum: 1, pageSize: 100 }),
-      getHarvestPage({ batchNo, pageNum: 1, pageSize: 10 }),
-      getHarvestPreview(batchId).catch(() => ({ data: null })),
-      getBatchGrowthLogPage({ batchNo, pageNum: 1, pageSize: 500 })
-    ])
-
-    const stockings = stockingRes.data?.records || []
-    const harvests = harvestRes.data?.records || []
-    const preview = previewRes.data || {}
-    const growthLogs = growthRes.data?.records || []
-
-    // 3. 获取投放池塘ID列表
-    const pondIds = [...new Set(stockings.map(s => s.pondId).filter(Boolean))]
-
-    // 4. 拉取巡塘日志（按池塘逐一查询后过滤 batchNo）
-    let patrols = []
-    let feedLogs = []
-    if (pondIds.length > 0) {
-      const [patrolResults, feedResults] = await Promise.all([
-        Promise.all(pondIds.map(pid => getPatrolLogPage({ pondId: pid, pageNum: 1, pageSize: 500 }))),
-        Promise.all(pondIds.map(pid => getPondFeedLogPage({ pondId: pid, pageNum: 1, pageSize: 500 })))
-      ])
-      patrols = patrolResults
-        .flatMap(r => r.data?.records || [])
-        .filter(p => p.batchNo === batchNo)
-      feedLogs = feedResults.flatMap(r => r.data?.records || [])
-    }
-
-    // 5. 建立 patrolLogId → { growth, feedTotalKg } 索引
-    const growthByPatrolId = {}
-    growthLogs.forEach(g => {
-      if (g.patrolLogId) growthByPatrolId[g.patrolLogId] = g
-    })
-
-    const feedByPatrolId = {}
-    feedLogs.forEach(f => {
-      if (f.patrolLogId) {
-        feedByPatrolId[f.patrolLogId] = (feedByPatrolId[f.patrolLogId] || 0) + (Number(f.feedAmount) || 0)
-      }
-    })
-
-    // 6. 构建事件时间线
-    const events = []
-
-    // A. 入库事件 — 字段名: unitQty (非 purchaseUnitQty)
-    events.push({
-      type: 'PURCHASE',
-      title: '苗种采购与检疫入库',
-      time: purchaseData.purchaseDate || purchaseData.createTime,
-      operator: purchaseData.createBy || '系统自动建档',
-      data: {
-        unitQty: purchaseData.unitQty || 0,
-        purchaseUnit: purchaseData.purchaseUnit || '件',
-        density: purchaseData.densityPerUnit || 0
-      }
-    })
-
-    // B. 投放事件
-    stockings.forEach(st => {
-      events.push({
-        type: 'STOCKING',
-        title: '投放下塘映射建立',
-        time: st.stockingDate || st.createTime,
-        operator: st.createBy || '养殖场操作员',
-        data: {
-          pondName: st.pondName || `池塘ID:${st.pondId}`,
-          stockedQty: st.stockedQty || (st.stockedUnits || 0) * (purchaseData.densityPerUnit || 0)
-        }
-      })
-    })
-
-    // C. 巡塘事件 — 数据来自 PatrolLog + BatchGrowthLog + PondFeedLog 三表联查
-    patrols.forEach(pt => {
-      const growth = growthByPatrolId[pt.id]
-      const feedTotal = feedByPatrolId[pt.id] || 0
-      const routineDeath = growth?.routineDeathCount || 0
-      const abnormalDeath = growth?.abnormalDeathCount || 0
-      events.push({
-        type: 'PATROL',
-        title: '日常巡塘与监测台账',
-        time: pt.patrolTime || pt.createTime,
-        operator: pt.createBy || '巡塘员',
-        data: {
-          temp: pt.waterTemp ?? '--',
-          weather: pt.weather || '--',
-          waterColor: pt.waterColor || '--',
-          feedTotal,
-          avgWeight: growth?.avgWeight ?? '--',
-          routineDeath,
-          abnormalDeath,
-          deathCount: routineDeath + abnormalDeath,
-          remark: pt.remark || '各项环境指标正常。'
-        }
-      })
-    })
-
-    // D. 出塘事件 — 字段名: actualTotalWeightKg (非 totalWeight)
-    harvests.forEach(hv => {
-      // 成活出池数 = 总重(kg) × 1000 / 均重(g)，仅当均重>0时计算
-      const weight = Number(hv.actualTotalWeightKg) || 0
-      const avgG = Number(hv.actualAvgWeightG) || 0
-      const estimatedCount = avgG > 0 ? Math.round(weight * 1000 / avgG) : null
-      events.push({
-        type: 'HARVEST',
-        title: '终点结算与出塘交易',
-        time: hv.harvestDate || hv.createTime,
-        operator: hv.createBy || '场区主管',
-        data: {
-          totalWeight: weight,
-          avgWeightG: avgG,
-          unitPrice: hv.unitPrice || 0,
-          totalRevenue: hv.totalRevenue || 0,
-          buyer: hv.buyerName || '散客/未知渠道',
-          finalCount: estimatedCount
-        }
-      })
-    })
-
-    // 按时间倒序
-    events.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime())
-
-    // 7. 聚合统计 — 优先使用 preview 接口返回的准确数据
-    const totalIn = (purchaseData.unitQty || 0) * (purchaseData.densityPerUnit || 0) || 1
-    const totalDead = preview.totalDeath ??
-      growthLogs.reduce((sum, g) => sum + (g.routineDeathCount || 0) + (g.abnormalDeathCount || 0), 0)
-    const survivalRate = preview.survivalRate ??
-      (totalIn > 0 ? Math.max(0, Math.min(100, ((totalIn - totalDead) / totalIn) * 100)) : 0)
-
-    // 8. 组装渲染数据
-    traceData.value = {
-      baseInfo: {
-        batchNo: purchaseData.batchNo,
-        seedlingName: preview.seedlingName || purchaseData.seedlingName || '未知水产品种',
-        totalQty: totalIn,
-        survivalRate: (typeof survivalRate === 'number' ? survivalRate : Number(survivalRate) || 0).toFixed(1),
-        totalFeedKg: preview.totalFeedKg ?? feedLogs.reduce((sum, f) => sum + (Number(f.feedAmount) || 0), 0),
-        totalDeath: totalDead,
-        status: purchaseData.batchStatus ?? 0,
-        seedlingCost: preview.seedlingCost ?? null,
-        totalFeedCost: preview.totalFeedCost ?? null,
-        totalMedicineCost: preview.totalMedicineCost ?? null
-      },
-      supplier: {
-        name: purchaseData.supplierName || '未知供应商',
-        licenseNo: '--',
-        quarantineNo: purchaseData.quarantineCertNo || '源头合格检疫'
-      },
-      events
-    }
-
+    const res = await getFarmerTraceDetail(batchNo)
+    traceData.value = res.data
   } catch (error) {
     console.error('全链路溯源失败:', error)
-    ElMessage.error('溯源数据获取失败，请稍后重试')
+    ElMessage.error(error?.response?.data?.message || '溯源数据获取失败，请稍后重试')
   } finally {
     loading.value = false
   }

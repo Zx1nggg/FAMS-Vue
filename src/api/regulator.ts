@@ -14,3 +14,9 @@ export const getFarmsGeo = ()                                 => request({ url: 
 // ==================== Trace ====================
 export const quickTrace  = (keyword: string)                  => request({ url: '/regulator/trace/quick', method: 'get', params: { keyword } })
 export const getTraceDetail = (batchNo: string)               => request({ url: '/regulator/trace/detail', method: 'get', params: { batchNo } })
+// ==================== Alerts ====================
+export const getAlertStats = () => request({ url: '/regulator/alerts/stats', method: 'get' })
+export const getAlertList = (params: any) => request({ url: '/regulator/alerts/list', method: 'get', params })
+export const getAlertTrend = (days?: number) => request({ url: '/regulator/alerts/trend', method: 'get', params: { days } })
+export const getIotRealtimeAlerts = () => request({ url: '/regulator/iot/realtime-alerts', method: 'get' })
+export const handleAlert = (id: number, data: { status: number; remark?: string }) => request({ url: `/regulator/alerts/${id}/handle`, method: 'put', data })
