@@ -185,6 +185,7 @@ import { computed, nextTick, onMounted, onUnmounted, reactive, ref } from 'vue'
 import * as echarts from 'echarts'
 import { Activity, AlertTriangle, CheckCircle2, Clock3, RefreshCw } from 'lucide-vue-next'
 import { ElMessage } from 'element-plus'
+import { useRoute } from 'vue-router'
 import {
   getAlertList,
   getAlertStats,
@@ -195,6 +196,7 @@ import {
 } from '@/api/regulator'
 import type { AlertItem, AlertStats, AlertTrend, FarmGeo, IotRealtimeAlert, PageResult } from '@/types/regulator'
 
+const route = useRoute()
 const loading = ref(false)
 const submitting = ref(false)
 const stats = ref<AlertStats>({
@@ -241,6 +243,7 @@ const statCards = computed(() => [
 const totalPages = computed(() => Math.max(1, Math.ceil(pagination.total / pagination.size)))
 
 onMounted(async () => {
+  applyRouteFilter()
   await refreshAll()
   window.addEventListener('resize', resizeChart)
 })
@@ -257,6 +260,11 @@ async function refreshAll() {
   } finally {
     loading.value = false
   }
+}
+
+function applyRouteFilter() {
+  const farmId = route.query.farmId
+  filters.farmId = typeof farmId === 'string' ? farmId : ''
 }
 
 async function loadStats() {

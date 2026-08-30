@@ -49,6 +49,18 @@ export interface TraceChain {
   nodes: TraceNode[]
 }
 
+export interface TraceBatch {
+  id: number
+  farmId: number
+  farmName?: string
+  batchNo: string
+  seedlingName?: string
+  supplierName?: string
+  estimatedTotalQty?: number
+  batchStatus?: number
+  purchaseDate?: string
+}
+
 export interface TraceNode {
   nodeType: 'supplier' | 'purchase' | 'stocking' | 'growth' | 'patrol' | 'feed' | 'harvest'
   nodeName: string

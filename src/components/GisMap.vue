@@ -408,6 +408,29 @@ async function goBackToNational() {
   await renderNationalView()
 }
 
+async function selectFarm(farmId: number) {
+  const farm = (props.farmData || []).find(item => item.farmId === farmId)
+  if (!farm) return
+
+  const province = resolveProvinceName(farm.province || '')
+  if (province) {
+    currentProvince.value = province
+    await nextTick()
+    await renderProvinceView(province)
+  }
+
+  selectedFarmInfo.value = {
+    name: farm.farmName,
+    address: farm.address,
+    species: farm.mainSpecies,
+    stock: farm.stockCount,
+    status: farm.alertStatus,
+    alertCount: farm.activeAlarmCount,
+  }
+}
+
+defineExpose({ selectFarm, goBackToNational })
+
 function formatStockCount(value: number | null | undefined) {
   const count = Number(value)
   if (!Number.isFinite(count) || count < 0) return '暂无数据'

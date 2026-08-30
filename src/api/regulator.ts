@@ -1,6 +1,6 @@
 import request from '@/utils/request'
 import type {
-  DashboardStats, DashboardAlert, DashboardWatchlist, FarmGeo, TraceChain
+  DashboardStats, DashboardAlert, DashboardWatchlist, FarmGeo, TraceBatch, TraceChain
 } from '@/types/regulator'
 
 // ==================== 监督方仪表盘 ====================
@@ -14,6 +14,13 @@ export const getFarmsGeo = ()                                 => request({ url: 
 // ==================== 全链路苗种追溯 ====================
 export const quickTrace  = (keyword: string)                  => request({ url: '/regulator/trace/quick', method: 'get', params: { keyword } })
 export const getTraceDetail = (batchNo: string)               => request({ url: '/regulator/trace/detail', method: 'get', params: { batchNo } })
+export const getTraceBatchList = (params: {
+  pageNum?: number
+  pageSize?: number
+  farmId?: number
+  batchStatus?: number
+  keyword?: string
+}) => request<{ records: TraceBatch[]; total: number; size: number; current: number }>({ url: '/regulator/trace/batches', method: 'get', params })
 // ==================== 风险异常预警 ====================
 export const getAlertStats = () => request({ url: '/regulator/alerts/stats', method: 'get' })
 export const getAlertList = (params: any) => request({ url: '/regulator/alerts/list', method: 'get', params })

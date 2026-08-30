@@ -96,7 +96,7 @@
           </div>
 
           <!-- GIS 地图监控 -->
-          <GisMap :farm-data="farmGeoList" :loading="loadingGeo" />
+          <GisMap ref="gisMapRef" :farm-data="farmGeoList" :loading="loadingGeo" />
         </div>
 
         <!-- 右侧：功能与告警面板 -->
@@ -157,6 +157,81 @@
               </div>
               <!-- 追溯错误 -->
               <div v-if="traceError" class="mt-4 text-xs text-red-500">{{ traceError }}</div>
+            </div>
+          </div>
+
+          <!-- 养殖场统一入口 -->
+          <div class="bg-white rounded-lg border border-slate-200 shadow-sm">
+            <div class="px-4 py-3 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+              <h2 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+                <ListFilter class="w-4 h-4 text-blue-600" />
+                养殖场快速定位
+              </h2>
+              <span class="text-xs text-slate-400">{{ filteredFarmGeoList.length }} 家</span>
+            </div>
+            <div class="p-4">
+              <input
+                v-model="farmKeyword"
+                type="text"
+                class="w-full px-3 py-2 rounded-md border border-slate-300 bg-slate-50 text-sm outline-none focus:bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                placeholder="搜索养殖场 / 省份 / 品种"
+              />
+              <div class="mt-3 max-h-72 overflow-y-auto space-y-2 pr-1">
+                <button
+                  v-for="farm in filteredFarmGeoList"
+                  :key="farm.farmId"
+                  class="w-full text-left border rounded-md px-3 py-2 transition-colors"
+                  :class="selectedFarmId === farm.farmId ? 'border-blue-300 bg-blue-50' : 'border-slate-200 hover:border-blue-200 hover:bg-slate-50'"
+                  @click="selectFarmFromList(farm)"
+                >
+                  <div class="flex items-start justify-between gap-2">
+                    <div class="min-w-0">
+                      <p class="text-sm font-semibold text-slate-800 truncate">{{ farm.farmName }}</p>
+                      <p class="text-xs text-slate-500 truncate mt-0.5">{{ farm.address || farm.province || '暂无地址' }}</p>
+                    </div>
+                    <span
+                      class="shrink-0 text-[10px] px-1.5 py-0.5 rounded border"
+                      :class="farm.alertStatus === 'critical'
+                        ? 'bg-red-50 text-red-600 border-red-200'
+                        : farm.alertStatus === 'warning'
+                          ? 'bg-amber-50 text-amber-600 border-amber-200'
+                          : 'bg-emerald-50 text-emerald-600 border-emerald-200'"
+                    >
+                      {{ statusLabel(farm.alertStatus) }}
+                    </span>
+                  </div>
+                  <div class="mt-2 grid grid-cols-3 gap-2 text-xs text-slate-500">
+                    <span>{{ farm.pondCount || 0 }} 口池塘</span>
+                    <span>{{ formatStockCount(farm.stockCount) }}</span>
+                    <span>{{ farm.mainSpecies || '未知品种' }}</span>
+                  </div>
+                </button>
+                <div v-if="!loadingGeo && filteredFarmGeoList.length === 0" class="py-8 text-center text-sm text-slate-400">
+                  暂无匹配养殖场
+                </div>
+              </div>
+
+              <div v-if="selectedFarm" class="mt-3 border border-blue-100 bg-blue-50/60 rounded-md p-3">
+                <div class="flex justify-between gap-3">
+                  <div>
+                    <p class="text-sm font-bold text-slate-800">{{ selectedFarm.farmName }}</p>
+                    <p class="text-xs text-slate-500 mt-1">{{ selectedFarm.address || '暂无地址' }}</p>
+                  </div>
+                  <button class="text-xs text-blue-700 font-medium hover:text-blue-900" @click="openFarmAlerts(selectedFarm)">
+                    看告警
+                  </button>
+                </div>
+                <div class="mt-2 grid grid-cols-2 gap-2 text-xs">
+                  <div class="bg-white/70 rounded px-2 py-1.5">
+                    <span class="text-slate-400">当前品种</span>
+                    <p class="font-medium text-slate-700">{{ selectedFarm.mainSpecies || '—' }}</p>
+                  </div>
+                  <div class="bg-white/70 rounded px-2 py-1.5">
+                    <span class="text-slate-400">活跃告警</span>
+                    <p class="font-medium text-slate-700">{{ selectedFarm.activeAlarmCount || 0 }} 条</p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -228,7 +303,7 @@
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import request from '@/utils/request'
 import {
-  ShieldCheck, Search, AlertOctagon, X, CheckCircle, RefreshCw,
+  ShieldCheck, Search, AlertOctagon, X, CheckCircle, RefreshCw, ListFilter,
   Map, Building2, Fish, FileCheck, AlertTriangle
 } from 'lucide-vue-next'
 import GisMap from '@/components/GisMap.vue'
@@ -259,6 +334,9 @@ const stats = ref<DashboardStats>({
 })
 const watchlist = ref<DashboardWatchlist[]>([])
 const farmGeoList = ref<FarmGeo[]>([])
+const gisMapRef = ref<any>(null)
+const farmKeyword = ref('')
+const selectedFarmId = ref<number | null>(null)
 
 // trace search
 const traceKeyword = ref('')
@@ -270,6 +348,19 @@ const geoSummary = computed(() => {
   const normal = farmGeoList.value.filter(f => f.alertStatus === 'normal').length
   const alert = farmGeoList.value.filter(f => f.alertStatus !== 'normal').length
   return { normal, alert }
+})
+const filteredFarmGeoList = computed(() => {
+  const keyword = farmKeyword.value.trim().toLowerCase()
+  if (!keyword) return farmGeoList.value
+  return farmGeoList.value.filter(f => {
+    return [f.farmName, f.address, f.province, f.mainSpecies]
+      .filter(Boolean)
+      .some(value => String(value).toLowerCase().includes(keyword))
+  })
+})
+const selectedFarm = computed(() => {
+  if (selectedFarmId.value == null) return null
+  return farmGeoList.value.find(f => f.farmId === selectedFarmId.value) || null
 })
 const currentDate = ref('')
 // API 调用 
@@ -327,6 +418,26 @@ async function doTraceSearch() {
   } finally {
     tracing.value = false
   }
+}
+
+function selectFarmFromList(farm: FarmGeo) {
+  selectedFarmId.value = farm.farmId
+  gisMapRef.value?.selectFarm?.(farm.farmId)
+}
+
+function openFarmAlerts(farm: FarmGeo) {
+  router.push({ path: '/regulator/alerts', query: { farmId: farm.farmId } })
+}
+
+function formatStockCount(value: number | null | undefined) {
+  const count = Number(value)
+  if (!Number.isFinite(count) || count < 0) return '暂无数据'
+  if (count >= 10000) return `${Number((count / 10000).toFixed(2)).toLocaleString()} 万尾`
+  return `${Math.round(count).toLocaleString()} 尾`
+}
+
+function statusLabel(status: FarmGeo['alertStatus']) {
+  return status === 'critical' ? '告警' : status === 'warning' ? '注意' : '正常'
 }
 
 async function refreshAll() {

@@ -29,6 +29,17 @@
           </div>
           <h3 class="text-lg font-bold text-gray-800 mb-2 truncate" :title="farm.farmName">{{ farm.farmName }}</h3>
           <p class="text-xs text-gray-400">场区编号: F-{{ farm.id.toString().padStart(6, '0') }}</p>
+          <p class="mt-3 text-xs text-gray-500 line-clamp-1" :title="farm.address">
+            {{ farm.address || '未填写详细地址' }}
+          </p>
+          <div class="mt-3 flex items-center gap-2 text-xs">
+            <span
+              class="rounded-full px-2 py-0.5 font-medium"
+              :class="hasGeo(farm) ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'"
+            >
+              {{ hasGeo(farm) ? '已配置地图坐标' : '缺少地图坐标' }}
+            </span>
+          </div>
         </div>
         
         <div class="border-t border-gray-50 bg-gray-50/50 p-4 flex gap-2 justify-between items-center">
@@ -59,11 +70,32 @@
     </div>
 
     <!-- 弹窗表单 -->
-    <el-dialog :title="dialogTitle" v-model="dialogVisible" width="450px" append-to-body class="!rounded-2xl">
+    <el-dialog :title="dialogTitle" v-model="dialogVisible" width="560px" append-to-body class="!rounded-2xl">
       <el-form ref="formRef" :model="form" :rules="rules" label-width="100px" class="pr-6 mt-4">
         <el-form-item label="场区名称" prop="farmName">
           <el-input v-model="form.farmName" placeholder="请输入养殖场名称 (如: 高明一区基地)" clearable />
         </el-form-item>
+        <el-form-item label="所在地区" required>
+          <div class="grid w-full grid-cols-2 gap-2">
+            <el-select v-model="form.province" placeholder="选择省份" filterable @change="handleProvinceChange">
+              <el-option
+                v-for="province in provinceOptions"
+                :key="province.name"
+                :label="province.name"
+                :value="province.name"
+              />
+            </el-select>
+            <el-select v-model="form.city" placeholder="选择城市" filterable>
+              <el-option v-for="city in cityOptions" :key="city.name" :label="city.name" :value="city.name" />
+            </el-select>
+          </div>
+        </el-form-item>
+        <el-form-item label="详细地址" prop="detailAddress">
+          <el-input v-model="form.detailAddress" placeholder="填写镇街、村、基地位置等补充信息" clearable />
+        </el-form-item>
+        <div class="ml-[100px] -mt-2 mb-2 text-xs text-slate-400">
+          系统会根据所选城市自动生成监管地图点位，无需手动填写经纬度。
+        </div>
       </el-form>
       <template #footer>
         <div class="dialog-footer">
@@ -76,10 +108,11 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Home, Building2, ArrowRight } from 'lucide-vue-next'
 import { getFarmPage, addFarm, updateFarm, delFarm } from '@/api/base'
+import { CHINA_LOCATION_TREE, resolveApproxFarmCoordinate } from '@/data/chinaLocations'
 
 const farmList = ref([])
 const loading = ref(false)
@@ -90,12 +123,27 @@ const dialogVisible = ref(false)
 const dialogTitle = ref('')
 const submitLoading = ref(false)
 const formRef = ref(null)
-const form = ref({ id: undefined, farmName: '' })
+const form = ref({
+  id: undefined,
+  farmName: '',
+  province: '广东省',
+  city: '',
+  detailAddress: ''
+})
 const rules = {
   farmName: [
     { required: true, message: '场区名称不能为空', trigger: 'blur' },
     { min: 2, max: 50, message: '场区名称需 2-50 个字符', trigger: 'blur' }
   ]
+}
+
+const provinceOptions = CHINA_LOCATION_TREE
+const cityOptions = computed(() => {
+  return provinceOptions.find(item => item.name === form.value.province)?.cities ?? []
+})
+
+const handleProvinceChange = () => {
+  form.value.city = ''
 }
 
 // 加载数据
@@ -110,6 +158,8 @@ const loadData = async () => {
 }
 
 onMounted(() => { loadData() })
+
+const hasGeo = (farm) => farm.longitude !== null && farm.longitude !== undefined && farm.latitude !== null && farm.latitude !== undefined
 
 // 🌟 核心修改点：接收整个 farm 对象，把名字也存起来
 const enterFarm = (farm) => {
@@ -130,13 +180,20 @@ const enterFarm = (farm) => {
 }
 
 const handleAdd = () => {
-  form.value = { id: undefined, farmName: '' }
+  form.value = { id: undefined, farmName: '', province: '广东省', city: '', detailAddress: '' }
   dialogTitle.value = '新增养殖场区'
   dialogVisible.value = true
 }
 
 const handleUpdate = (row) => {
-  form.value = { id: row.id, farmName: row.farmName }
+  const parsed = parseAddress(row.address)
+  form.value = {
+    id: row.id,
+    farmName: row.farmName,
+    province: parsed.province,
+    city: parsed.city,
+    detailAddress: parsed.detailAddress
+  }
   dialogTitle.value = '修改养殖场区'
   dialogVisible.value = true
 }
@@ -145,13 +202,28 @@ const submitForm = async () => {
   if (!formRef.value) return
   await formRef.value.validate(async (valid) => {
     if (valid) {
+      if (!form.value.city) {
+        ElMessage.warning('请选择场区所在城市')
+        return
+      }
       submitLoading.value = true
       try {
+        const address = buildAddress()
+        const coordinate = resolveApproxFarmCoordinate(form.value.province, form.value.city, `${form.value.farmName}${address}`)
+        const submitData = {
+          ...form.value,
+          address,
+          longitude: coordinate.longitude,
+          latitude: coordinate.latitude
+        }
+        delete submitData.province
+        delete submitData.city
+        delete submitData.detailAddress
         if (form.value.id) {
-          await updateFarm(form.value.id, form.value)
+          await updateFarm(form.value.id, submitData)
           ElMessage.success('修改成功')
         } else {
-          await addFarm(form.value)
+          await addFarm(submitData)
           ElMessage.success('新增成功')
         }
         dialogVisible.value = false
@@ -161,6 +233,24 @@ const submitForm = async () => {
       }
     }
   })
+}
+
+const buildAddress = () => {
+  return [form.value.province, form.value.city, form.value.detailAddress]
+    .filter(Boolean)
+    .join(' ')
+}
+
+const parseAddress = (address = '') => {
+  const parts = String(address || '').split(/\s+/).filter(Boolean)
+  const province = provinceOptions.some(item => item.name === parts[0]) ? parts[0] : '广东省'
+  const provinceCityOptions = provinceOptions.find(item => item.name === province)?.cities ?? []
+  const city = provinceCityOptions.some(item => item.name === parts[1]) ? parts[1] : ''
+  return {
+    province,
+    city,
+    detailAddress: city ? parts.slice(2).join(' ') : address
+  }
 }
 
 const handleDelete = (row) => {
