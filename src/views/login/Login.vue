@@ -317,7 +317,7 @@ const handleLogin = async () => {
     let path = '/'
     if (user.role === 'FARMER') path = '/farmer/dashboard'
     else if (user.role === 'REGULATOR') path = '/regulator/dashboard'
-    else if (user.role === 'ADMIN') path = '/admin/registrations'
+    else if (user.role === 'ADMIN') path = '/admin/dashboard'
     
     router.push(path)
 

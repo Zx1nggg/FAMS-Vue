@@ -5,6 +5,7 @@ import FarmerDashboard from '../views/dashboard/Farmer.vue'
 import RegulatorDashboard from '../views/dashboard/Regulator.vue'
 import FarmerLayout from '../layout/FarmerLayout.vue'
 import RegulatorLayout from '../layout/RegulatorLayout.vue'
+import AdminLayout from '../layout/AdminLayout.vue'
 import FarmManagement from '../views/farmer/base/FarmManagement.vue'
 import PondManagement from '../views/farmer/base/PondManagement.vue'
 import SupplierManagement from '../views/farmer/base/SupplierManagement.vue'
@@ -159,13 +160,39 @@ const routes = [
         component: () => import('../views/regulator/Settings.vue'),
         meta: { title: '账号设置' },
       },
+      {
+        path: 'review',
+        name: 'SupplierReview',
+        component: () => import('../views/regulator/SupplierReview.vue'),
+        meta: { title: '供应商资质审查' },
+      }
     ],
   },
   {
-    path: '/admin/registrations',
-    name: 'RegistrationManagement',
-    component: () => import('../views/admin/RegistrationManagement.vue'),
-    meta: { title: '入驻申请审批' },
+    path: '/admin',
+    name: 'Admin',
+    component: AdminLayout,
+    redirect: '/admin/dashboard',
+    children: [
+      {
+        path: 'dashboard',
+        name: 'AdminDashboard',
+        component: () => import('../views/admin/Dashboard.vue'),
+        meta: { title: '中枢运维总览' },
+      },
+      {
+        path: 'users',
+        name: 'AdminUserManagement',
+        component: () => import('../views/admin/UserManagement.vue'),
+        meta: { title: '账号运维' },
+      },
+      {
+        path: 'registrations',
+        name: 'RegistrationManagement',
+        component: () => import('../views/admin/RegistrationManagement.vue'),
+        meta: { title: '入驻申请审批' },
+      },
+    ],
   },
 ]
 

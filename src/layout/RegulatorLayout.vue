@@ -156,7 +156,7 @@ const menuGroups = [
   {
     title: '合规与稽查审查',
     items: [
-      { name: '供应商资质审查', path: '/regulator/compliance/suppliers', icon: ShieldCheck },
+      { name: '供应商资质审查', path: '/regulator/review', icon: ShieldCheck },
       { name: '线下抽检档案', path: '/regulator/compliance/inspections', icon: ClipboardCheck },
     ]
   },
