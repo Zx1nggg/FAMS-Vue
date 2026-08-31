@@ -101,6 +101,13 @@ export const delHarvest = (ids: string | number) => request({ url: `/lifecycle/h
 export const getHarvestPreview = (batchId: number) => request({ url: '/lifecycle/harvest-record/preview', method: 'get', params: { batchId } })
 export const getFarmerTraceDetail = (batchNo: string) => request({ url: '/lifecycle/trace/detail', method: 'get', params: { batchNo } })
 
+// ==================== 农户经营统计分析 ====================
+export const getFarmerSurvivalRate = (params: any) => request({ url: '/farmer/analysis/survival-rate', method: 'get', params })
+export const getFarmerSurvivalTrend = (params: any) => request({ url: '/farmer/analysis/survival-trend', method: 'get', params })
+export const getFarmerProductionStats = (params: any) => request({ url: '/farmer/analysis/production-stats', method: 'get', params })
+export const getFarmerProductionRanking = (params: any) => request({ url: '/farmer/analysis/production-ranking', method: 'get', params })
+export const exportFarmerAnalysis = (params: any) => request({ url: '/farmer/analysis/export', method: 'get', params, responseType: 'blob' })
+
 // ==================== 用户个人主页 ====================
 export const getUserProfile = () => request({ url: '/user/profile', method: 'get', silent: true } as any)
 export const updateUserProfile = (data: any) => request({ url: '/user/profile', method: 'put', data })

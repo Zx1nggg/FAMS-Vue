@@ -29,3 +29,10 @@ export const getIotRealtimeAlerts = () => request({ url: '/regulator/iot/realtim
 export const handleAlert = (id: number, data: { status: number; remark?: string }) => request({ url: `/regulator/alerts/${id}/handle`, method: 'put', data })
 
 // ==================== 供应商资质审查 ====================
+
+// ==================== 统计分析与报表 ====================
+export const getSurvivalRate = (params: any) => request({ url: '/regulator/analysis/survival-rate', method: 'get', params })
+export const getSurvivalTrend = (params: any) => request({ url: '/regulator/analysis/survival-trend', method: 'get', params })
+export const getProductionStats = (params: any) => request({ url: '/regulator/analysis/production-stats', method: 'get', params })
+export const getProductionRanking = (params: any) => request({ url: '/regulator/analysis/production-ranking', method: 'get', params })
+export const exportAnalysis = (params: any) => request({ url: '/regulator/analysis/export', method: 'get', params, responseType: 'blob' })

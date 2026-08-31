@@ -134,3 +134,47 @@ export interface IotRealtimeAlert {
   thresholdMax?: number
   dataTime: string
 }
+
+export interface SurvivalRate {
+  dimKey: string
+  dimLabel: string
+  farmId?: number
+  farmName?: string
+  seedlingId?: number
+  seedlingName?: string
+  stockedQty: number
+  estimatedHarvestQty: number
+  deathQty: number
+  totalHarvestWeightKg: number
+  survivalRate: number
+  avgWeightG: number
+  batchCount: number
+}
+
+export interface SurvivalTrend {
+  month: string
+  avgSurvivalRate: number
+  maxRate: number
+  minRate: number
+  batchCount: number
+}
+
+export interface ProductionStats {
+  totalProductionKg: number
+  totalRevenue: number
+  totalCost: number
+  netProfit: number
+  harvestCount: number
+  participatingFarmCount: number
+  avgUnitPrice: number
+}
+
+export interface ProductionRanking {
+  ranking: number
+  farmId: number
+  farmName: string
+  totalProductionKg: number
+  totalRevenue: number
+  netProfit: number
+  harvestCount: number
+}

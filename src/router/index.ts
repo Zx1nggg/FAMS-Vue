@@ -111,6 +111,12 @@ const routes = [
         meta: { title: '养殖追溯查询' },
       },
       {
+        path: 'analysis',
+        name: 'FarmerAnalysis',
+        component: () => import('../views/farmer/Analysis.vue'),
+        meta: { title: '经营统计分析' },
+      },
+      {
         path: 'profile',
         name: 'FarmerProfile',
         component: () => import('../views/farmer/Profile.vue'),
@@ -165,6 +171,18 @@ const routes = [
         name: 'SupplierReview',
         component: () => import('../views/regulator/SupplierReview.vue'),
         meta: { title: '供应商资质审查' },
+      },
+      {
+        path: 'analysis/survival',
+        name: 'RegulatorSurvivalAnalysis',
+        component: () => import('../views/regulator/SurvivalAnalysis.vue'),
+        meta: { title: '多维成活率分析' },
+      },
+      {
+        path: 'analysis/reports',
+        name: 'RegulatorProductionReports',
+        component: () => import('../views/regulator/ProductionReports.vue'),
+        meta: { title: '产销全局统计表' },
       }
     ],
   },

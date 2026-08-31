@@ -141,7 +141,7 @@ import { getCachedAvatar, clearUserCache } from '@/utils/storage'
 import { 
   Fish, LayoutDashboard, Home, Box, Users,
   Search,
-  Truck, MapPin, Stethoscope, LogOut, ChevronDown, User, Settings, BookOpen, LayoutGrid, DollarSign
+  Truck, MapPin, Stethoscope, LogOut, ChevronDown, User, Settings, BookOpen, LayoutGrid, DollarSign, Activity
 } from 'lucide-vue-next'
 
 const router = useRouter()
@@ -166,6 +166,12 @@ const menuGroups = [
       { name: '池塘实时概览', path: '/farmer/lifecycle/overview', icon: LayoutGrid },
       { name: '出塘结算管理', path: '/farmer/lifecycle/harvest', icon: DollarSign },
       { name: '养殖追溯查询', path: '/farmer/lifecycle/trace', icon: Search }
+    ]
+  },
+  {
+    title: '统计分析',
+    items: [
+      { name: '经营统计分析', path: '/farmer/analysis', icon: Activity }
     ]
   }
 ]

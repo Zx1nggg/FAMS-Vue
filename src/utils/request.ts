@@ -37,6 +37,9 @@ service.interceptors.request.use(
 // 2. 响应拦截器
 service.interceptors.response.use(
   (response) => {
+    if (response.config.responseType === 'blob') {
+      return response as any;
+    }
     const res = response.data;
 
     // 后端 Result 统一格式：{ code, message, data }
