@@ -173,6 +173,12 @@ const routes = [
         meta: { title: '供应商资质审查' },
       },
       {
+        path: 'compliance/inspections',
+        name: 'InspectionRecords',
+        component: () => import('../views/regulator/InspectionRecords.vue'),
+        meta: { title: '线下抽检档案' },
+      },
+      {
         path: 'analysis/survival',
         name: 'RegulatorSurvivalAnalysis',
         component: () => import('../views/regulator/SurvivalAnalysis.vue'),
@@ -209,6 +215,12 @@ const routes = [
         name: 'RegistrationManagement',
         component: () => import('../views/admin/RegistrationManagement.vue'),
         meta: { title: '入驻申请审批' },
+      },
+      {
+        path: 'base/sop-template',
+        name: 'AdminSopTemplates',
+        component: () => import('../views/admin/base/SOPTemplateManagement.vue'),
+        meta: { title: 'SOP 模板管理' },
       },
     ],
   },

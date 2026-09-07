@@ -31,7 +31,7 @@
           入驻申请进度查询
         </h1>
         <p class="text-teal-100/80 text-sm sm:text-base max-w-lg font-light tracking-wide drop-shadow">
-          输入您提交申请时填写的系统账号，实时获取审批状态。
+          输入申请时填写的手机号和密码，验证后查看审批状态。
         </p>
       </div>
     </div>
@@ -43,7 +43,7 @@
         <!-- 搜索输入组 -->
         <div class="w-full max-w-xl mx-auto">
           <label class="block text-center text-xs font-bold text-slate-500 mb-3 uppercase tracking-widest">
-            请输入申请账号
+            请输入申请手机号和密码
           </label>
           <div class="flex flex-col sm:flex-row gap-3">
             <div class="relative flex-1">
@@ -54,7 +54,10 @@
                 class="block w-full pl-11 pr-4 py-3.5 border-2 border-slate-100 rounded-xl text-slate-900 focus:outline-none focus:border-teal-500 focus:ring-4 focus:ring-teal-500/10 transition-all text-base bg-slate-50 focus:bg-white"
                 placeholder="请输入注册时填写的手机号" />
             </div>
-            <button @click="queryStatus" :disabled="!queryPhone || querying"
+            <input type="password" v-model="queryPassword" @keyup.enter="queryStatus" autocomplete="current-password" maxlength="72"
+              aria-label="申请密码" placeholder="申请时设置的密码"
+              class="block w-full sm:w-48 px-4 py-3.5 border-2 border-slate-100 rounded-xl text-slate-900 focus:outline-none focus:border-teal-500 bg-slate-50" />
+            <button @click="queryStatus" :disabled="!queryPhone || !queryPassword || querying"
               class="px-8 py-3.5 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 whitespace-nowrap">
               <Loader2 v-if="querying" class="w-5 h-5 animate-spin" />
               <Search v-else class="w-5 h-5" />
@@ -78,7 +81,7 @@
           <!-- 默认占位图 (无结果且未查询时) -->
           <div v-if="!result && !notFound && !justSubmitted" class="text-center opacity-40 grayscale flex flex-col items-center">
             <Search class="w-16 h-16 text-slate-300 mb-4" />
-            <p class="text-slate-400 text-sm">暂无查询数据，请在上方的输入框中输入账号进行检索。</p>
+            <p class="text-slate-400 text-sm">请在上方输入手机号和申请密码后查询。</p>
           </div>
 
           <!-- 提交成功提示 (从注册页跳转过来) -->
@@ -212,6 +215,7 @@ const router = useRouter()
 const route = useRoute()
 
 const queryPhone = ref('')
+const queryPassword = ref('')
 const querying = ref(false)
 const result = ref(null)
 const notFound = ref(false)
@@ -219,30 +223,30 @@ const errorMsg = ref('')
 const justSubmitted = ref(false)
 
 onMounted(() => {
-  // 如果是从注册页跳转过来，自动查询
+  // 仅预填手机号，密码由申请人重新输入，不放入 URL 或浏览器存储。
   const phone = route.query.phone
   const submitted = route.query.submitted
   if (phone) {
     queryPhone.value = phone
     justSubmitted.value = submitted === '1'
-    queryStatus()
   }
 })
 
 const queryStatus = async () => {
-  if (!queryPhone.value.trim()) return
+  if (!queryPhone.value.trim() || !queryPassword.value || querying.value) return
   querying.value = true
   errorMsg.value = ''
   result.value = null
   notFound.value = false
 
   try {
-    const res = await request.get('/auth/registration-status', {
-      params: { phone: queryPhone.value.trim() }
+    const res = await request.post('/auth/registration-status', {
+      phone: queryPhone.value.trim(), password: queryPassword.value
     })
     result.value = res.data
     // 查询出结果后，隐藏“刚才已提交”的提示
     justSubmitted.value = false 
+    queryPassword.value = ''
   } catch (error) {
     if (error.message && error.message.includes('404')) {
       notFound.value = true

@@ -38,9 +38,7 @@
       <h3 class="text-lg font-bold text-gray-700 mb-2">等待检索</h3>
       <p class="text-sm text-gray-400">请在上方输入正确的批次号进行追溯查询</p>
       
-      <div class="mt-8 text-xs text-amber-600 bg-amber-50 px-4 py-2 rounded-lg border border-amber-100 flex items-center gap-2 cursor-pointer hover:bg-amber-100 transition-colors" @click="simulateDemo">
-        <Lightbulb class="w-4 h-4" /> 点击此处加载一个 Demo 演示批次
-      </div>
+
     </div>
 
     <div v-if="traceData && !loading" class="flex-1 grid grid-cols-1 xl:grid-cols-3 gap-6 overflow-y-auto custom-scrollbar pr-1 pb-4">
@@ -101,7 +99,7 @@
             <div class="mt-auto flex gap-3 pt-4 border-t border-gray-50">
               <el-button 
                 class="flex-1 !bg-teal-50 !text-teal-700 !border-teal-200 hover:!bg-teal-600 hover:!text-white transition-all shadow-sm"
-                @click="emailDialogVisible = true"
+                disabled title="邮件服务尚未配置"
               >
                 <Mail class="w-4 h-4 mr-1.5" /> 发送报告
               </el-button>
@@ -359,54 +357,8 @@ const handleSearch = async () => {
   }
 }
 
-// 保留一个模拟入口，方便答辩时在无真实数据的情况下进行完美演示
-const simulateDemo = () => {
-  searchBatchNo.value = 'B20260428-001'
-
-  // 模拟请求延迟，展示逼真加载效果
-  loading.value = true
-  setTimeout(() => {
-    traceData.value = {
-      baseInfo: {
-        batchNo: searchBatchNo.value,
-        seedlingName: '南美白对虾 (Penaeus vannamei)',
-        totalQty: 200000,
-        survivalRate: '92.5',
-        totalFeedKg: 570.5,
-        totalDeath: 15000,
-        status: 3
-      },
-      supplier: {
-        name: '湛江海联水产种苗基地',
-        licenseNo: '粤渔种许字(2025)第001号',
-        quarantineNo: 'AQ-20260427-889'
-      },
-      events: [
-        { type: 'HARVEST', title: '终点结算与出塘交易', time: '2026-07-28T09:30:00', operator: '陈老农', data: { totalWeight: 3205.5, avgWeightG: 17.3, unitPrice: 42.0, totalRevenue: 134631, buyer: '盒马鲜生生鲜直采中心', finalCount: 185000 } },
-        { type: 'PATROL', title: '成长期巡塘抽测', time: '2026-07-15T08:15:00', operator: '陈老农', data: { temp: 29.5, weather: '晴', waterColor: '翠绿', feedTotal: 450.0, avgWeight: 14.5, routineDeath: 8, abnormalDeath: 4, deathCount: 12, remark: '对虾体色透亮，摄食旺盛，水质指标全部正常。' } },
-        { type: 'PATROL', title: '标粗期巡塘抽测', time: '2026-05-30T16:00:00', operator: '李技术员', data: { temp: 28.0, weather: '阴', waterColor: '黄绿', feedTotal: 120.5, avgWeight: 3.2, routineDeath: 30, abnormalDeath: 15, deathCount: 45, remark: '遭遇强降雨，部分虾苗出现应激反应，已泼洒抗激灵。' } },
-        { type: 'STOCKING', title: '投放下塘映射建立', time: '2026-04-29T07:00:00', operator: '陈老农', data: { pondName: '1号高位池', stockedQty: 200000 } },
-        { type: 'PURCHASE', title: '苗种采购与检疫入库', time: '2026-04-28T14:20:00', operator: '采购部-张三', data: { unitQty: 100, purchaseUnit: '袋', density: 2000 } }
-      ]
-    }
-    loading.value = false
-  }, 1000)
-}
-
-// 发送邮件逻辑（演示）
-const sendEmail = () => {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-  if (!emailForm.to || !emailRegex.test(emailForm.to)) {
-    return ElMessage.warning('请输入正确格式的邮箱地址')
-  }
-  sendingEmail.value = true
-  setTimeout(() => {
-    ElMessage.success('溯源报告已成功发送至目标邮箱！')
-    sendingEmail.value = false
-    emailDialogVisible.value = false
-    emailForm.to = ''; emailForm.remark = ''
-  }, 1200)
-}
+// 邮件服务尚未配置，禁止伪造发送成功。
+const sendEmail = () => ElMessage.info('邮件发送服务尚未接入')
 </script>
 
 <style scoped>

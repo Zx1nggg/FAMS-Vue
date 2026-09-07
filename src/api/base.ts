@@ -98,7 +98,7 @@ export const getHarvestById = (id: string | number) => request({ url: `/lifecycl
 export const addHarvest = (data: any) => request({ url: '/lifecycle/harvest-record', method: 'post', data })
 export const updateHarvest = (id: string | number, data: any) => request({ url: `/lifecycle/harvest-record/${id}`, method: 'put', data })
 export const delHarvest = (ids: string | number) => request({ url: `/lifecycle/harvest-record/${ids}`, method: 'delete' })
-export const getHarvestPreview = (batchId: number) => request({ url: '/lifecycle/harvest-record/preview', method: 'get', params: { batchId } })
+export const getHarvestPreview = (batchId: number, pondId: number) => request({ url: '/lifecycle/harvest-record/preview', method: 'get', params: { batchId, pondId } })
 export const getFarmerTraceDetail = (batchNo: string) => request({ url: '/lifecycle/trace/detail', method: 'get', params: { batchNo } })
 
 // ==================== 农户经营统计分析 ====================

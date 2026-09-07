@@ -135,11 +135,12 @@
             <div class="space-y-4">
               <div>
                 <label class="block text-left text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wide">
-                  真实姓名 <span class="text-red-500">*</span>
+                  展示昵称 <span class="text-red-500">*</span>
                 </label>
-                <input type="text" v-model="form.realName" required
+                <input type="text" v-model="form.username" required minlength="2" maxlength="20"
                   class="block w-full pl-3 pr-3 py-2.5 border border-slate-200 rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus:border-teal-500 focus:ring-teal-100 transition-colors text-sm"
-                  placeholder="请输入您的真实姓名" />
+                  placeholder="请输入2-20位昵称，用于页面展示" />
+                <p class="text-xs text-slate-400 mt-1">真实姓名可在审核通过并登录后，到账号设置中补充。</p>
               </div>
               <div>
                 <label class="block text-left text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wide">
@@ -256,7 +257,7 @@ const phoneAvailable = ref(null)
 const form = reactive({
   phone: '',
   password: '',
-  realName: '',
+  username: '',
   email: '',
   farmName: '',
   farmProvince: '',
@@ -292,7 +293,7 @@ const confirmPasswordClass = computed(() => {
 
 // 表单是否有效
 const isFormValid = computed(() => {
-  if (!form.phone || !isPhoneValid.value || !form.password || !form.realName || !form.farmName) return false
+  if (!form.phone || !isPhoneValid.value || !form.password || form.username.trim().length < 2 || !form.farmName) return false
   if (form.password !== confirmPassword.value) return false
   if (phoneAvailable.value === false) return false
   return true

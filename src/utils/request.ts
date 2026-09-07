@@ -36,9 +36,12 @@ service.interceptors.request.use(
 
 // 2. 响应拦截器
 service.interceptors.response.use(
-  (response) => {
+  async (response) => {
     if (response.config.responseType === 'blob') {
-      return response as any;
+      // Error envelopes also arrive as Blob for spreadsheet downloads.
+      const contentType = String(response.headers['content-type'] || response.data?.type || '');
+      if (!contentType.includes('json')) return response as any;
+      response.data = JSON.parse(await response.data.text());
     }
     const res = response.data;
 
@@ -47,7 +50,7 @@ service.interceptors.response.use(
       ElMessage.error(res.message || '系统异常');
 
       // 401 鉴权失败 → 强制跳转登录页
-      if (res.code === 401) {
+      if (res.code === 401 && !['/auth/login', '/auth/registration-status'].includes(response.config.url || '')) {
         handleUnauthorized();
       }
       return Promise.reject(new Error(res.message || 'Error'));
@@ -73,6 +76,7 @@ service.interceptors.response.use(
  */
 function handleUnauthorized() {
   sessionStorage.removeItem('aqua_user');
+  sessionStorage.removeItem('current_farm_id');
   setTimeout(() => {
     window.location.href = '/login';
   }, 1000);

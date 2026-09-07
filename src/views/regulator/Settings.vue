@@ -65,10 +65,10 @@
                   <div class="p-2 bg-slate-50 rounded-lg"><Smartphone class="w-5 h-5 text-slate-600" /></div>
                   <div>
                     <h3 class="font-bold text-gray-800">工作手机</h3>
-                    <p class="text-xs text-gray-500 mt-0.5">当前绑定: <span class="font-mono text-gray-800 font-medium">139****1122</span> <span class="text-amber-500 ml-1">(用于接收紧急预警短信)</span></p>
+                    <p class="text-xs text-gray-500 mt-0.5">当前手机: <span class="font-mono text-gray-800 font-medium">{{ maskedPhone }}</span> <span class="text-amber-500 ml-1">(短信服务未接入)</span></p>
                   </div>
                 </div>
-                <el-button type="primary" plain class="!bg-teal-50 !text-teal-700 !border-teal-200 hover:!bg-teal-600 hover:!text-white" @click="dialogs.phone = true">更换手机</el-button>
+                <el-button type="primary" plain class="!bg-teal-50 !text-teal-700 !border-teal-200 hover:!bg-teal-600 hover:!text-white" disabled title="短信换绑尚未接入">更换手机</el-button>
               </div>
             </div>
 
@@ -78,10 +78,10 @@
                   <div class="p-2 bg-slate-50 rounded-lg"><Mail class="w-5 h-5 text-slate-600" /></div>
                   <div>
                     <h3 class="font-bold text-gray-800">政务/工作邮箱</h3>
-                    <p class="text-xs text-gray-500 mt-0.5">未绑定。绑定后可用于接收周期性系统监管报告。</p>
+                    <p class="text-xs text-gray-500 mt-0.5">{{ profile.email || '未填写邮箱' }}。邮件报告服务尚未接入。</p>
                   </div>
                 </div>
-                <el-button type="primary" plain class="!bg-teal-50 !text-teal-700 !border-teal-200 hover:!bg-teal-600 hover:!text-white">立即绑定</el-button>
+                <el-button type="primary" plain class="!bg-teal-50 !text-teal-700 !border-teal-200 hover:!bg-teal-600 hover:!text-white" @click="$router.push('/regulator/profile')">维护邮箱</el-button>
               </div>
             </div>
           </div>
@@ -100,16 +100,16 @@
                 <p class="text-xs text-indigo-600 font-bold uppercase tracking-wider mb-2">当前执法官身份</p>
                 <div class="flex items-center gap-3">
                   <div class="w-12 h-12 bg-indigo-600 text-white rounded-full flex items-center justify-center font-bold text-xl shadow-md">
-                    王
+                    {{ profile.realName?.slice(0, 1) || '监' }}
                   </div>
                   <div>
                     <div class="flex items-center gap-2">
-                      <span class="text-indigo-900 font-bold text-lg">王建国</span>
+                      <span class="text-indigo-900 font-bold text-lg">{{ profile.realName || '未填写姓名' }}</span>
                       <span class="bg-indigo-100 text-indigo-700 text-xs px-2 py-0.5 rounded border border-indigo-200 flex items-center gap-1 font-bold shadow-sm">
-                        <CheckCircle2 class="w-3 h-3" /> 认证监管员
+                        <ShieldCheck class="w-3 h-3" /> {{ profile.userType === 'REGULATOR' ? '监管账号' : '当前账号' }}
                       </span>
                     </div>
-                    <p class="text-sm text-indigo-700 mt-0.5">执法编号：<span class="font-mono">ZF-2026-F091</span></p>
+                    <p class="text-sm text-indigo-700 mt-0.5">执法资质信息尚未接入</p>
                   </div>
                 </div>
               </div>
@@ -117,17 +117,17 @@
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
                 <div class="bg-white/70 p-4 rounded-lg border border-indigo-100/50">
                   <p class="text-xs text-gray-500 mb-1">所属单位</p>
-                  <p class="text-sm font-bold text-gray-800">福建省海洋与渔业局 - 厦门分局</p>
+                  <p class="text-sm font-bold text-gray-800">尚未配置</p>
                 </div>
                 <div class="bg-white/70 p-4 rounded-lg border border-indigo-100/50">
                   <p class="text-xs text-gray-500 mb-1">管辖范围</p>
-                  <p class="text-sm font-bold text-gray-800">厦门市 (思明区, 湖里区, 海沧区)</p>
+                  <p class="text-sm font-bold text-gray-800">尚未配置地域范围</p>
                 </div>
               </div>
               
               <div class="mt-2">
                 <p class="text-sm text-gray-600 mb-3">如遇岗位调动或管辖区域变更，请向系统中心提交权限移交或变更申请。</p>
-                <el-button type="primary" class="!bg-indigo-600 !border-none hover:!bg-indigo-700 !rounded-lg" @click="dialogs.agency = true">
+                <el-button type="primary" class="!bg-indigo-600 !border-none hover:!bg-indigo-700 !rounded-lg" disabled title="机构审批流程尚未配置">
                   申请机构/权限变更
                 </el-button>
               </div>
@@ -146,7 +146,7 @@
                 <h3 class="font-bold text-gray-800">产地检疫违规告警</h3>
                 <p class="text-xs text-gray-500 mt-1">当辖区内养殖场未开具产地检疫证明直接进行苗种销售时，发送短信和系统通知。</p>
               </div>
-              <el-switch v-model="notifySettings.quarantine" active-color="#f59e0b" />
+              <el-switch disabled title="通知推送服务尚未接入" v-model="notifySettings.quarantine" active-color="#f59e0b" />
             </div>
 
             <div class="flex items-center justify-between border-b border-gray-100 pb-4">
@@ -154,7 +154,7 @@
                 <h3 class="font-bold text-gray-800">苗种异常高死亡率告警</h3>
                 <p class="text-xs text-gray-500 mt-1">当辖区内某一批次苗种连续3天死亡率异常（高于设定阈值）时推送预警，防范重大疫病。</p>
               </div>
-              <el-switch v-model="notifySettings.mortality" active-color="#f59e0b" />
+              <el-switch disabled title="通知推送服务尚未接入" v-model="notifySettings.mortality" active-color="#f59e0b" />
             </div>
 
             <div class="flex items-center justify-between border-b border-gray-100 pb-4">
@@ -162,7 +162,7 @@
                 <h3 class="font-bold text-gray-800">跨省违规调拨追踪</h3>
                 <p class="text-xs text-gray-500 mt-1">辖区内苗种跨省调运未进行系统备案时的实时拦截与告警通知。</p>
               </div>
-              <el-switch v-model="notifySettings.transport" active-color="#f59e0b" />
+              <el-switch disabled title="通知推送服务尚未接入" v-model="notifySettings.transport" active-color="#f59e0b" />
             </div>
 
             <div class="flex items-center justify-between pb-2">
@@ -170,7 +170,7 @@
                 <h3 class="font-bold text-gray-800">周度监管数据简报</h3>
                 <p class="text-xs text-gray-500 mt-1">每周五下午汇总辖区内苗种生产、抽检合格率及违规情况，推送到工作箱。</p>
               </div>
-              <el-switch v-model="notifySettings.weeklyReport" active-color="#f59e0b" />
+              <el-switch disabled title="通知推送服务尚未接入" v-model="notifySettings.weeklyReport" active-color="#f59e0b" />
             </div>
           </div>
         </div>
@@ -243,8 +243,13 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import request from '@/utils/request'
+import { clearUserCache } from '@/utils/storage'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
+const profile = ref({})
+const maskedPhone = computed(() => profile.value.phone?.replace(/^(\d{3})\d{4}(\d{4})$/, '$1****$2') || '未填写')
+onMounted(async () => { profile.value = (await request.get('/user/profile')).data })
 import { 
   ShieldCheck, Building, Key, Smartphone, Mail, BellRing, CheckCircle2, AlertCircle
 } from 'lucide-vue-next'
@@ -278,63 +283,22 @@ const pwdForm = reactive({ old: '', new: '', confirm: '' })
 const phoneForm = reactive({ phone: '', code: '' })
 const agencyForm = reactive({ target: '', reason: '' })
 
-// 验证码倒计时逻辑
+// 尚未配置短信、实名认证审批或机构调动服务；不得展示虚假成功。
 const countdown = ref(0)
-let timer = null
-
-const sendCode = (type) => {
-  if (type === 'phone' && !phoneForm.phone) {
-    return ElMessage.warning('请先输入手机号码')
-  }
-  
-  // 模拟发送请求
-  ElMessage.success('验证码发送成功，请查收')
-  countdown.value = 60
-  timer = setInterval(() => {
-    countdown.value--
-    if (countdown.value <= 0) clearInterval(timer)
-  }, 1000)
-}
-
-// 模拟提交：修改密码
-const submitPassword = () => {
-  if (!pwdForm.old || !pwdForm.new) return ElMessage.warning('请完整填写密码信息')
-  if (pwdForm.new !== pwdForm.confirm) return ElMessage.error('两次输入的新密码不一致')
-  
+const sendCode = () => ElMessage.info('短信服务尚未接入')
+const submitPhone = () => ElMessage.info('短信换绑尚未接入，请在个人资料中维护联系电话')
+const submitIdentity = () => ElMessage.info('实名认证审批流程尚未配置')
+const submitAgency = () => ElMessage.info('机构调动审批流程尚未配置')
+const submitPassword = async () => {
+  if (!pwdForm.old || pwdForm.new.length < 6) return ElMessage.warning('请输入原密码和至少 6 位的新密码')
+  if (pwdForm.new !== pwdForm.confirm) return ElMessage.error('两次新密码不一致')
   loadings.password = true
-  setTimeout(() => {
-    ElMessage.success('密码修改成功，请妥善保管新凭证')
-    dialogs.password = false
-    loadings.password = false
-    pwdForm.old = ''; pwdForm.new = ''; pwdForm.confirm = '';
-  }, 800)
-}
-
-// 模拟提交：更换手机
-const submitPhone = () => {
-  if (!phoneForm.phone || !phoneForm.code) return ElMessage.warning('请完整填写手机和验证码')
-  
-  loadings.phone = true
-  setTimeout(() => {
-    ElMessage.success('工作手机号换绑成功！')
-    dialogs.phone = false
-    loadings.phone = false
-    phoneForm.phone = ''; phoneForm.code = '';
-    countdown.value = 0; clearInterval(timer);
-  }, 800)
-}
-
-// 模拟提交：机构权限变更申请
-const submitAgency = () => {
-  if (!agencyForm.target || !agencyForm.reason) return ElMessage.warning('请完整填写申请资料')
-  
-  loadings.agency = true
-  setTimeout(() => {
-    ElMessage.success('权限调动申请已提交，等待系统中心审批！')
-    dialogs.agency = false
-    loadings.agency = false
-    agencyForm.target = ''; agencyForm.reason = '';
-  }, 800)
+  try {
+    await request.put('/user/password', { oldPassword: pwdForm.old, newPassword: pwdForm.new })
+    clearUserCache(); sessionStorage.removeItem('aqua_user'); sessionStorage.removeItem('current_farm_id')
+    ElMessage.success('密码已修改，请重新登录')
+    window.location.href = '/login'
+  } finally { loadings.password = false; pwdForm.old = ''; pwdForm.new = ''; pwdForm.confirm = '' }
 }
 
 </script>

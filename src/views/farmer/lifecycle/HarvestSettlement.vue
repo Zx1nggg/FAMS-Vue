@@ -349,7 +349,7 @@
 
         <el-row :gutter="20">
           <el-col :span="12">
-            <el-form-item label="收购方">
+            <el-form-item label="收购方" prop="buyerName">
               <el-input v-model="form.buyerName" placeholder="收购方/去向" maxlength="100" />
             </el-form-item>
           </el-col>
@@ -378,6 +378,7 @@ import { ref, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, RefreshCw, DollarSign, Box, Home, Fish } from 'lucide-vue-next'
 import { getHarvestPage, addHarvest, updateHarvest, delHarvest, getHarvestPreview, getPondPage, getPurchasePage, getStockingPage } from '@/api/base'
+import { loadAllPages } from '@/utils/pagination'
 
 const currentFarmId = ref(sessionStorage.getItem('current_farm_id'))
 const currentFarmName = ref(sessionStorage.getItem('current_farm_name') || '未命名场区')
@@ -391,6 +392,8 @@ const queryParams = ref({ pageNum: 1, pageSize: 10, farmId: currentFarmId.value,
 // 辅助下拉数据
 const pondOptions = ref([])       // 全部池塘
 const allBatches = ref([])        // 全部批次
+const harvestedPairs = ref(new Set())
+const hasHarvest = (batchNo, pondId) => harvestedPairs.value.has(`${batchNo}:${pondId}`)
 const stockingRecords = ref([])   // 全部投放记录（用于 pond↔batch 联动）
 
 /**
@@ -418,7 +421,7 @@ const availablePonds = computed(() => {
     const batchIds = pondBatchMap.value.get(p.id)
     if (!batchIds || batchIds.size === 0) return false
     // 该池塘至少有一个 status=2 的批次
-    return allBatches.value.some(b => batchIds.has(b.id) && b.batchStatus === 2)
+    return allBatches.value.some(b => batchIds.has(b.id) && b.batchStatus === 2 && !hasHarvest(b.batchNo, p.id))
   })
 })
 
@@ -428,7 +431,7 @@ const availablePonds = computed(() => {
 function pondStockBatchCount(pondId) {
   const batchIds = pondBatchMap.value.get(pondId)
   if (!batchIds) return 0
-  return allBatches.value.filter(b => batchIds.has(b.id) && b.batchStatus === 2).length
+  return allBatches.value.filter(b => batchIds.has(b.id) && b.batchStatus === 2 && !hasHarvest(b.batchNo, pondId)).length
 }
 
 /**
@@ -438,7 +441,7 @@ const availableBatches = computed(() => {
   if (!form.value.pondId) return []
   const batchIds = pondBatchMap.value.get(form.value.pondId)
   if (!batchIds) return []
-  return allBatches.value.filter(b => batchIds.has(b.id) && b.batchStatus === 2)
+  return allBatches.value.filter(b => batchIds.has(b.id) && b.batchStatus === 2 && !hasHarvest(b.batchNo, form.value.pondId))
 })
 
 // 弹窗相关
@@ -465,6 +468,7 @@ const form = ref({
 })
 
 const rules = {
+  buyerName: [{ required: true, whitespace: true, message: '请填写收购方/去向', trigger: 'blur' }],
   batchNo: [{ required: true, message: '请选择出塘批次', trigger: 'change' }],
   pondId: [{ required: true, message: '请选择出塘池塘', trigger: 'change' }],
   harvestDate: [{ required: true, message: '请选择出塘日期', trigger: 'change' }],
@@ -496,11 +500,21 @@ const computedProfit = computed(() => {
 /** 切换池塘 → 清空批次、清空预览 */
 function onPondChange() {
   form.value.batchNo = undefined
+  form.value.seedlingCost = undefined
+  form.value.feedCost = undefined
+  form.value.medicineCost = undefined
   previewData.value = null
 }
 
 /** 切换批次 → 加载预览，自动回填成本参考值 */
 async function onBatchChange(batchNo) {
+  const pondId = form.value.pondId
+  if (!form.value.id) {
+    form.value.seedlingCost = undefined
+    form.value.feedCost = undefined
+    form.value.medicineCost = undefined
+  }
+  previewData.value = null
   if (!batchNo) {
     previewData.value = null
     return
@@ -509,7 +523,8 @@ async function onBatchChange(batchNo) {
   if (!selectedBatch) return
 
   try {
-    const res = await getHarvestPreview(selectedBatch.id)
+    const res = await getHarvestPreview(selectedBatch.id, pondId)
+    if (form.value.batchNo !== batchNo || form.value.pondId !== pondId) return
     if (res.code === 200) {
       previewData.value = res.data
 
@@ -542,14 +557,16 @@ onMounted(() => {
 
 async function loadAuxiliaryOptions() {
   try {
-    const [pondRes, batchRes, stockingRes] = await Promise.all([
-      getPondPage({ pageNum: 1, pageSize: 100, farmId: currentFarmId.value }),
-      getPurchasePage({ pageNum: 1, pageSize: 200, farmId: currentFarmId.value }),
-      getStockingPage({ pageNum: 1, pageSize: 500, farmId: currentFarmId.value })
+    const [pondRes, batchRes, stockingRes, harvestRes] = await Promise.all([
+      loadAllPages(getPondPage, { farmId: currentFarmId.value }),
+      loadAllPages(getPurchasePage, { farmId: currentFarmId.value }),
+      loadAllPages(getStockingPage, { farmId: currentFarmId.value }),
+      loadAllPages(getHarvestPage, { farmId: currentFarmId.value })
     ])
     if (pondRes.code === 200) pondOptions.value = pondRes.data.records
     if (batchRes.code === 200) allBatches.value = batchRes.data.records
     if (stockingRes.code === 200) stockingRecords.value = stockingRes.data.records
+    if (harvestRes.code === 200) harvestedPairs.value = new Set(harvestRes.data.records.map(h => `${h.batchNo}:${h.pondId}`))
   } catch (error) {
     console.error('辅助下拉字典数据加载失败', error)
   }

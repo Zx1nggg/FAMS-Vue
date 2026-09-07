@@ -70,10 +70,10 @@
                   <div class="p-2 bg-slate-50 rounded-lg"><Smartphone class="w-5 h-5 text-slate-600" /></div>
                   <div>
                     <h3 class="font-bold text-gray-800">绑定手机</h3>
-                    <p class="text-xs text-gray-500 mt-0.5">当前绑定: <span class="font-mono text-gray-800 font-medium">138****5678</span></p>
+                    <p class="text-xs text-gray-500 mt-0.5">当前手机: <span class="font-mono text-gray-800 font-medium">{{ maskedPhone }}</span></p>
                   </div>
                 </div>
-                <el-button type="primary" plain class="!bg-teal-50 !text-teal-700 !border-teal-200 hover:!bg-teal-600 hover:!text-white" @click="dialogs.phone = true">更换手机</el-button>
+                <el-button type="primary" plain class="!bg-teal-50 !text-teal-700 !border-teal-200 hover:!bg-teal-600 hover:!text-white" disabled title="短信换绑尚未接入">更换手机</el-button>
               </div>
             </div>
 
@@ -84,10 +84,10 @@
                   <div class="p-2 bg-slate-50 rounded-lg"><Mail class="w-5 h-5 text-slate-600" /></div>
                   <div>
                     <h3 class="font-bold text-gray-800">安全邮箱</h3>
-                    <p class="text-xs text-gray-500 mt-0.5">未绑定。绑定后可用于接收告警邮件和找回密码。</p>
+                    <p class="text-xs text-gray-500 mt-0.5">{{ profile.email || '未填写邮箱' }}。邮件通知及邮件找回密码尚未接入。</p>
                   </div>
                 </div>
-                <el-button type="primary" plain class="!bg-teal-50 !text-teal-700 !border-teal-200 hover:!bg-teal-600 hover:!text-white" @click="dialogs.email = true">立即绑定</el-button>
+                <el-button type="primary" plain class="!bg-teal-50 !text-teal-700 !border-teal-200 hover:!bg-teal-600 hover:!text-white" @click="$router.push('/farmer/profile')">立即绑定</el-button>
               </div>
             </div>
           </div>
@@ -107,16 +107,16 @@
                 <p class="text-xs text-blue-600 font-bold uppercase tracking-wider mb-1">当前认证状态</p>
                 <div class="flex items-center gap-2">
                   <span class="bg-blue-600 text-white text-xs px-2 py-0.5 rounded flex items-center gap-1 font-bold shadow-sm">
-                    <CheckCircle2 class="w-3 h-3" /> 已实名
+                    <UserCheck class="w-3 h-3" /> {{ profile.realName ? '实名信息已填写' : '待填写实名信息' }}
                   </span>
-                  <span class="text-blue-800 font-bold text-lg">陈老农</span>
+                  <span class="text-blue-800 font-bold text-lg">{{ profile.realName || '未填写姓名' }}</span>
                 </div>
               </div>
               
               <div class="bg-white/60 p-4 rounded-lg border border-blue-100/50 w-full sm:w-2/3">
-                <p class="text-sm text-gray-700 mb-2">如因企业变更、法人更换等原因需要修改实名信息，请提交申请，由系统管理员人工审核。</p>
-                <el-button type="primary" class="!bg-blue-600 !border-none hover:!bg-blue-700 !rounded-lg mt-2" @click="dialogs.identity = true">
-                  申请修改实名
+                <p class="text-sm text-gray-700 mb-2">入驻申请不收集真实姓名，请在登录后于此处补充。</p>
+                <el-button type="primary" class="!bg-blue-600 !border-none hover:!bg-blue-700 !rounded-lg mt-2" @click="openIdentityDialog">
+                  {{ profile.realName ? '修改实名信息' : '填写实名信息' }}
                 </el-button>
               </div>
             </div>
@@ -185,23 +185,20 @@
       </template>
     </el-dialog>
 
-    <!-- 3. 申请修改实名弹窗 -->
-    <el-dialog v-model="dialogs.identity" title="申请修改实名信息" width="450px" append-to-body class="!rounded-2xl">
-      <div class="bg-amber-50 border border-amber-100 text-amber-700 text-xs p-3 rounded-lg mb-4 flex gap-2">
+    <!-- 3. 填写实名信息弹窗 -->
+    <el-dialog v-model="dialogs.identity" title="填写实名信息" width="450px" append-to-body class="!rounded-2xl">
+      <div class="bg-blue-50 border border-blue-100 text-blue-700 text-xs p-3 rounded-lg mb-4 flex gap-2">
         <AlertCircle class="w-4 h-4 shrink-0" />
-        实名信息修改需要系统管理员人工审核，提交后请耐心等待，期间不影响系统正常使用。
+        请输入真实姓名或法人代表姓名。该信息仅用于账号资料，不会替代页面展示昵称。
       </div>
       <el-form label-position="top">
-        <el-form-item label="新的真实姓名/法人代表">
-          <el-input v-model="identityForm.newName" placeholder="请输入真实的法定名称" />
-        </el-form-item>
-        <el-form-item label="申请变更理由">
-          <el-input v-model="identityForm.reason" type="textarea" :rows="3" placeholder="如：主体变更、填错修改等" />
+        <el-form-item label="真实姓名/法人代表">
+          <el-input v-model="identityForm.newName" maxlength="50" placeholder="请输入真实姓名" />
         </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="dialogs.identity = false" class="!rounded-lg">取消</el-button>
-        <el-button type="primary" @click="submitIdentity" class="!bg-blue-600 !border-none hover:!bg-blue-700 !rounded-lg" :loading="loadings.identity">提交申请</el-button>
+        <el-button type="primary" @click="submitIdentity" class="!bg-blue-600 !border-none hover:!bg-blue-700 !rounded-lg" :loading="loadings.identity">保存实名信息</el-button>
       </template>
     </el-dialog>
 
@@ -209,8 +206,13 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import request from '@/utils/request'
+import { clearUserCache } from '@/utils/storage'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
+const profile = ref({})
+const maskedPhone = computed(() => profile.value.phone?.replace(/^(\d{3})\d{4}(\d{4})$/, '$1****$2') || '未填写')
+onMounted(async () => { profile.value = (await request.get('/user/profile')).data })
 import { 
   ShieldCheck, UserCheck, Key, Smartphone, Mail, AlertOctagon, CheckCircle2, AlertCircle
 } from 'lucide-vue-next'
@@ -235,65 +237,41 @@ const loadings = reactive({
 // 表单数据
 const pwdForm = reactive({ old: '', new: '', confirm: '' })
 const phoneForm = reactive({ phone: '', code: '' })
-const identityForm = reactive({ newName: '', reason: '' })
+const identityForm = reactive({ newName: '' })
 
-// 验证码倒计时逻辑
+// 尚未配置短信换绑服务；不得展示虚假成功。
 const countdown = ref(0)
-let timer = null
-
-const sendCode = (type) => {
-  if (type === 'phone' && !phoneForm.phone) {
-    return ElMessage.warning('请先输入手机号码')
-  }
-  
-  // 模拟发送请求
-  ElMessage.success('验证码发送成功，请查收')
-  countdown.value = 60
-  timer = setInterval(() => {
-    countdown.value--
-    if (countdown.value <= 0) clearInterval(timer)
-  }, 1000)
+const sendCode = () => ElMessage.info('短信服务尚未接入')
+const submitPhone = () => ElMessage.info('短信换绑尚未接入，请在个人资料中维护联系电话')
+const submitAgency = () => ElMessage.info('机构调动审批流程尚未配置')
+const openIdentityDialog = () => {
+  identityForm.newName = profile.value.realName || ''
+  dialogs.identity = true
 }
-
-// 模拟提交：修改密码
-const submitPassword = () => {
-  if (!pwdForm.old || !pwdForm.new) return ElMessage.warning('请完整填写密码信息')
-  if (pwdForm.new !== pwdForm.confirm) return ElMessage.error('两次输入的新密码不一致')
-  
-  loadings.password = true
-  setTimeout(() => {
-    ElMessage.success('密码修改成功，请妥善保管')
-    dialogs.password = false
-    loadings.password = false
-    pwdForm.old = ''; pwdForm.new = ''; pwdForm.confirm = '';
-  }, 800)
-}
-
-// 模拟提交：更换手机
-const submitPhone = () => {
-  if (!phoneForm.phone || !phoneForm.code) return ElMessage.warning('请完整填写手机和验证码')
-  
-  loadings.phone = true
-  setTimeout(() => {
-    ElMessage.success('手机号换绑成功！')
-    dialogs.phone = false
-    loadings.phone = false
-    phoneForm.phone = ''; phoneForm.code = '';
-    countdown.value = 0; clearInterval(timer);
-  }, 800)
-}
-
-// 模拟提交：实名认证申请
-const submitIdentity = () => {
-  if (!identityForm.newName || !identityForm.reason) return ElMessage.warning('请完整填写申请资料')
-  
+const submitIdentity = async () => {
+  const realName = identityForm.newName.trim()
+  if (realName.length < 2) return ElMessage.warning('请输入至少2个字符的真实姓名')
   loadings.identity = true
-  setTimeout(() => {
-    ElMessage.success('实名修改申请已提交给管理员审核！')
+  try {
+    const res = await request.put('/user/profile', { realName })
+    profile.value = res.data
+    clearUserCache()
     dialogs.identity = false
+    ElMessage.success('实名信息已保存')
+  } finally {
     loadings.identity = false
-    identityForm.newName = ''; identityForm.reason = '';
-  }, 800)
+  }
+}
+const submitPassword = async () => {
+  if (!pwdForm.old || pwdForm.new.length < 6) return ElMessage.warning('请输入原密码和至少 6 位的新密码')
+  if (pwdForm.new !== pwdForm.confirm) return ElMessage.error('两次新密码不一致')
+  loadings.password = true
+  try {
+    await request.put('/user/password', { oldPassword: pwdForm.old, newPassword: pwdForm.new })
+    clearUserCache(); sessionStorage.removeItem('aqua_user'); sessionStorage.removeItem('current_farm_id')
+    ElMessage.success('密码已修改，请重新登录')
+    window.location.href = '/login'
+  } finally { loadings.password = false; pwdForm.old = ''; pwdForm.new = ''; pwdForm.confirm = '' }
 }
 
 </script>

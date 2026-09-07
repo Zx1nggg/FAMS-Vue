@@ -78,6 +78,7 @@ const menuGroups = [
       { name: '运维总览', path: '/admin/dashboard', icon: Gauge },
       { name: '账号运维', path: '/admin/users', icon: UsersRound },
       { name: '入驻审批', path: '/admin/registrations', icon: ClipboardCheck },
+      { name: 'SOP 模板管理', path: '/admin/base/sop-template', icon: ClipboardCheck },
     ],
   },
 ]
