@@ -78,7 +78,7 @@ const routes = [
         path: 'base/seedling',
         name: 'SeedlingDictManagement',
         component: SeedlingDictManagement,
-        meta: { title: '苗种字典' },
+        meta: { title: '苗种公共目录' },
       },
       {
         path: 'lifecycle/stocking',
@@ -171,6 +171,18 @@ const routes = [
         name: 'SupplierReview',
         component: () => import('../views/regulator/SupplierReview.vue'),
         meta: { title: '供应商资质审查' },
+      },
+      {
+        path: 'seedlings',
+        name: 'RegulatorSeedlingCatalog',
+        component: SeedlingDictManagement,
+        meta: { title: '苗种公共目录' },
+      },
+      {
+        path: 'quarantine',
+        name: 'QuarantineReview',
+        component: () => import('../views/regulator/QuarantineReview.vue'),
+        meta: { title: '苗种检疫审核' },
       },
       {
         path: 'compliance/inspections',

@@ -107,16 +107,16 @@
                 <p class="text-xs text-blue-600 font-bold uppercase tracking-wider mb-1">当前认证状态</p>
                 <div class="flex items-center gap-2">
                   <span class="bg-blue-600 text-white text-xs px-2 py-0.5 rounded flex items-center gap-1 font-bold shadow-sm">
-                    <UserCheck class="w-3 h-3" /> {{ profile.realName ? '实名信息已填写' : '待填写实名信息' }}
+                    <UserCheck class="w-3 h-3" /> 实名认证服务未接入
                   </span>
                   <span class="text-blue-800 font-bold text-lg">{{ profile.realName || '未填写姓名' }}</span>
                 </div>
               </div>
               
               <div class="bg-white/60 p-4 rounded-lg border border-blue-100/50 w-full sm:w-2/3">
-                <p class="text-sm text-gray-700 mb-2">入驻申请不收集真实姓名，请在登录后于此处补充。</p>
-                <el-button type="primary" class="!bg-blue-600 !border-none hover:!bg-blue-700 !rounded-lg mt-2" @click="openIdentityDialog">
-                  {{ profile.realName ? '修改实名信息' : '填写实名信息' }}
+                <p class="text-sm text-gray-700 mb-2">此处显示入驻审核时提交的负责人姓名。实名认证及变更审批服务尚未接入。</p>
+                <el-button type="primary" class="!bg-blue-600 !border-none hover:!bg-blue-700 !rounded-lg mt-2" disabled title="实名认证审批流程尚未配置">
+                  申请修改实名
                 </el-button>
               </div>
             </div>
@@ -185,20 +185,23 @@
       </template>
     </el-dialog>
 
-    <!-- 3. 填写实名信息弹窗 -->
-    <el-dialog v-model="dialogs.identity" title="填写实名信息" width="450px" append-to-body class="!rounded-2xl">
-      <div class="bg-blue-50 border border-blue-100 text-blue-700 text-xs p-3 rounded-lg mb-4 flex gap-2">
+    <!-- 3. 申请修改实名弹窗 -->
+    <el-dialog v-model="dialogs.identity" title="申请修改实名信息" width="450px" append-to-body class="!rounded-2xl">
+      <div class="bg-amber-50 border border-amber-100 text-amber-700 text-xs p-3 rounded-lg mb-4 flex gap-2">
         <AlertCircle class="w-4 h-4 shrink-0" />
-        请输入真实姓名或法人代表姓名。该信息仅用于账号资料，不会替代页面展示昵称。
+        实名信息修改需要系统管理员人工审核，提交后请耐心等待，期间不影响系统正常使用。
       </div>
       <el-form label-position="top">
-        <el-form-item label="真实姓名/法人代表">
-          <el-input v-model="identityForm.newName" maxlength="50" placeholder="请输入真实姓名" />
+        <el-form-item label="新的真实姓名/法人代表">
+          <el-input v-model="identityForm.newName" placeholder="请输入真实的法定名称" />
+        </el-form-item>
+        <el-form-item label="申请变更理由">
+          <el-input v-model="identityForm.reason" type="textarea" :rows="3" placeholder="如：主体变更、填错修改等" />
         </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="dialogs.identity = false" class="!rounded-lg">取消</el-button>
-        <el-button type="primary" @click="submitIdentity" class="!bg-blue-600 !border-none hover:!bg-blue-700 !rounded-lg" :loading="loadings.identity">保存实名信息</el-button>
+        <el-button type="primary" @click="submitIdentity" class="!bg-blue-600 !border-none hover:!bg-blue-700 !rounded-lg" :loading="loadings.identity">提交申请</el-button>
       </template>
     </el-dialog>
 
@@ -237,31 +240,14 @@ const loadings = reactive({
 // 表单数据
 const pwdForm = reactive({ old: '', new: '', confirm: '' })
 const phoneForm = reactive({ phone: '', code: '' })
-const identityForm = reactive({ newName: '' })
+const identityForm = reactive({ newName: '', reason: '' })
 
-// 尚未配置短信换绑服务；不得展示虚假成功。
+// 尚未配置短信、实名认证审批或机构调动服务；不得展示虚假成功。
 const countdown = ref(0)
 const sendCode = () => ElMessage.info('短信服务尚未接入')
 const submitPhone = () => ElMessage.info('短信换绑尚未接入，请在个人资料中维护联系电话')
+const submitIdentity = () => ElMessage.info('实名认证审批流程尚未配置')
 const submitAgency = () => ElMessage.info('机构调动审批流程尚未配置')
-const openIdentityDialog = () => {
-  identityForm.newName = profile.value.realName || ''
-  dialogs.identity = true
-}
-const submitIdentity = async () => {
-  const realName = identityForm.newName.trim()
-  if (realName.length < 2) return ElMessage.warning('请输入至少2个字符的真实姓名')
-  loadings.identity = true
-  try {
-    const res = await request.put('/user/profile', { realName })
-    profile.value = res.data
-    clearUserCache()
-    dialogs.identity = false
-    ElMessage.success('实名信息已保存')
-  } finally {
-    loadings.identity = false
-  }
-}
 const submitPassword = async () => {
   if (!pwdForm.old || pwdForm.new.length < 6) return ElMessage.warning('请输入原密码和至少 6 位的新密码')
   if (pwdForm.new !== pwdForm.confirm) return ElMessage.error('两次新密码不一致')

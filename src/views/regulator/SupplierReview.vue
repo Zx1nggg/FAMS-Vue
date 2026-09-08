@@ -4,7 +4,7 @@
       <header class="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
           <h1 class="text-2xl font-bold text-slate-900">供应商资质审查</h1>
-          <p class="mt-1 text-sm text-slate-500">统一维护水产苗种供应商名录，农户将从本名录中选择供应商进货。</p>
+          <p class="mt-1 text-sm text-slate-500">统一核准供应商资质及可供应苗种；农户只能采购这里配置的供应商—品种组合。</p>
         </div>
         <button
           class="inline-flex h-9 items-center justify-center gap-2 rounded-md bg-slate-800 px-4 text-sm font-medium text-white hover:bg-slate-700"
@@ -60,6 +60,14 @@
               <span v-else class="text-gray-400 text-sm">暂无记录</span>
             </template>
           </el-table-column>
+          <el-table-column label="可供应苗种" min-width="220">
+            <template #default="scope">
+              <div v-if="scope.row.seedlingNames?.length" class="flex flex-wrap gap-1">
+                <el-tag v-for="name in scope.row.seedlingNames" :key="name" size="small" effect="plain">{{ name }}</el-tag>
+              </div>
+              <span v-else class="text-amber-500 text-xs">尚未配置，农户不可采购</span>
+            </template>
+          </el-table-column>
           <el-table-column label="操作" align="center" width="150" fixed="right">
             <template #default="scope">
               <el-button link type="primary" @click="handleUpdate(scope.row)">编辑</el-button>
@@ -97,6 +105,12 @@
           <el-input v-model="form.qualificationCode" placeholder="水产苗种生产许可证号等" clearable />
           <div class="text-xs text-gray-400 mt-1">录入资质编号有助于后续产地追溯审计</div>
         </el-form-item>
+        <el-form-item label="可供应苗种" prop="seedlingIds">
+          <el-select v-model="form.seedlingIds" multiple filterable class="!w-full" placeholder="请选择核准供应的苗种">
+            <el-option v-for="item in seedlingOptions" :key="item.id" :label="item.categoryName" :value="item.id" />
+          </el-select>
+          <div class="text-xs text-gray-400 mt-1">采购端将只显示这里勾选的品种。缺少品种时，请先到“苗种公共目录”维护。</div>
+        </el-form-item>
       </el-form>
       <template #footer>
         <div class="dialog-footer">
@@ -112,7 +126,7 @@
 import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Search, RefreshCw } from 'lucide-vue-next'
-import { getSupplierPage, addSupplier, updateSupplier, delSupplier } from '@/api/base'
+import { getSupplierPage, addSupplier, updateSupplier, delSupplier, getSeedlingList } from '@/api/base'
 
 // 表格与查询参数
 const tableData = ref([])
@@ -125,7 +139,8 @@ const dialogVisible = ref(false)
 const dialogTitle = ref('')
 const submitLoading = ref(false)
 const formRef = ref(null)
-const form = ref({ id: undefined, supplierName: '', contactPerson: '', contactPhone: '', qualificationCode: '' })
+const form = ref({ id: undefined, supplierName: '', contactPerson: '', contactPhone: '', qualificationCode: '', seedlingIds: [] as number[] })
+const seedlingOptions = ref<any[]>([])
 
 const validatePhone = (_rule: any, value: string) => {
   if (!value) return Promise.resolve()
@@ -143,10 +158,15 @@ const rules = {
   ],
   contactPhone: [
     { validator: validatePhone, trigger: 'blur' }
-  ]
+  ],
+  seedlingIds: [{ type: 'array', required: true, min: 1, message: '请至少选择一个可供应苗种', trigger: 'change' }]
 }
 
-onMounted(() => { getList() })
+onMounted(async () => {
+  const result = await getSeedlingList()
+  seedlingOptions.value = result.data || []
+  await getList()
+})
 
 const getList = async () => {
   loading.value = true
@@ -163,7 +183,7 @@ const handleQuery = () => { queryParams.value.pageNum = 1; getList() }
 const resetQuery = () => { queryParams.value.supplierName = ''; handleQuery() }
 
 const handleAdd = () => {
-  form.value = { id: undefined, supplierName: '', contactPerson: '', contactPhone: '', qualificationCode: '' }
+  form.value = { id: undefined, supplierName: '', contactPerson: '', contactPhone: '', qualificationCode: '', seedlingIds: [] }
   dialogTitle.value = '新增供应商'
   dialogVisible.value = true
 }

@@ -112,7 +112,7 @@
           <el-table-column label="操作" align="center" width="160" fixed="right">
             <template #default="scope">
               <el-button link type="primary" :disabled="scope.row.batchStatus === 3" @click="handleUpdate(scope.row)">
-                {{ scope.row.batchStatus === 3 ? '已锁定' : '编辑' }}
+                {{ scope.row.batchStatus >= 1 ? '编辑金额' : '编辑' }}
               </el-button>
               <el-button link type="danger" @click="handleDelete(scope.row)" :disabled="scope.row.batchStatus >= 2">
                 删除
@@ -139,12 +139,12 @@
     <el-dialog :title="dialogTitle" v-model="dialogVisible" width="600px" append-to-body class="!rounded-2xl">
       <el-form ref="formRef" :model="form" :rules="rules" label-width="110px" class="pr-6 mt-4">
 
-        <!-- 已出库锁定提示 -->
-        <div v-if="isEditLocked" class="mb-4 bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-start gap-2">
+        <!-- 流程锁定提示 -->
+        <div v-if="isCoreLocked" class="mb-4 bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-start gap-2">
           <span class="text-amber-500 text-base mt-0.5">⚠️</span>
           <div class="text-xs text-amber-700">
-            <p class="font-bold mb-0.5">该批次已出库结算</p>
-            <p class="text-amber-600">历史采购数据不可再编辑，所有字段已锁定。</p>
+            <p class="font-bold mb-0.5">{{ isEditLocked ? '该批次已出库结算' : '该批次已通过检疫' }}</p>
+            <p class="text-amber-600">供应商、苗种、数量和日期已经进入合规链路，不可再修改；未结算前仍可修正采购单价。</p>
           </div>
         </div>
 
@@ -156,40 +156,40 @@
           </div>
           <div class="flex-1">
             <el-form-item label="入库日期" prop="purchaseDate" class="!mb-0">
-              <el-date-picker v-model="form.purchaseDate" type="date" placeholder="选择日期" value-format="YYYY-MM-DD" class="!w-full" :disabled="isEditLocked" />
+              <el-date-picker v-model="form.purchaseDate" type="date" placeholder="选择日期" value-format="YYYY-MM-DD" class="!w-full" :disabled="isCoreLocked" />
             </el-form-item>
           </div>
         </div>
 
         <el-form-item label="供应商来源" prop="supplierId">
-          <el-select v-model="form.supplierId" placeholder="请选择苗种供应商" filterable class="!w-full" :disabled="isEditLocked">
+          <el-select v-model="form.supplierId" placeholder="请先选择苗种供应商" filterable class="!w-full" :disabled="isCoreLocked">
             <el-option v-for="item in supplierOptions" :key="item.id" :label="item.supplierName" :value="item.id" />
           </el-select>
         </el-form-item>
 
         <el-form-item label="苗种品种" prop="seedlingId">
-          <el-select v-model="form.seedlingId" placeholder="请选择采购苗种品种" filterable class="!w-full" :disabled="isEditLocked">
-            <el-option v-for="item in seedlingOptions" :key="item.id" :label="item.categoryName" :value="item.id" />
+          <el-select v-model="form.seedlingId" :placeholder="form.supplierId ? '请选择该供应商在售苗种' : '请先选择供应商'" filterable class="!w-full" :disabled="isCoreLocked || !form.supplierId" no-data-text="该供应商尚未配置可供应苗种">
+            <el-option v-for="item in availableSeedlings" :key="item.id" :label="item.categoryName" :value="item.id" />
           </el-select>
         </el-form-item>
 
         <!-- 单位与密度联动计算区域 -->
         <div class="grid grid-cols-2 gap-2">
           <el-form-item label="包装单位" prop="purchaseUnit">
-            <el-select v-model="form.purchaseUnit" placeholder="单位" class="!w-full" :disabled="isEditLocked">
+            <el-select v-model="form.purchaseUnit" placeholder="单位" class="!w-full" :disabled="isCoreLocked">
               <el-option label="袋 (Bag)" value="袋" />
               <el-option label="箱 (Box)" value="箱" />
               <el-option label="车 (Truck)" value="车" />
             </el-select>
           </el-form-item>
           <el-form-item label="包装数量" prop="unitQty">
-            <el-input-number v-model="form.unitQty" :min="1" :step="1" class="!w-full" placeholder="件数" :disabled="isEditLocked" />
+            <el-input-number v-model="form.unitQty" :min="1" :step="1" class="!w-full" placeholder="件数" :disabled="isCoreLocked" />
           </el-form-item>
         </div>
 
         <div class="grid grid-cols-2 gap-2">
           <el-form-item label="单位密度(尾)" prop="densityPerUnit">
-            <el-input-number v-model="form.densityPerUnit" :min="1" :step="100" class="!w-full" placeholder="如: 2000" :disabled="isEditLocked" />
+            <el-input-number v-model="form.densityPerUnit" :min="1" :step="100" class="!w-full" placeholder="如: 2000" :disabled="isCoreLocked" />
           </el-form-item>
           <el-form-item label="预估总数(尾)" prop="estimatedTotalQty">
             <!-- 只读计算属性，使用 :model-value 避免写入警告 -->
@@ -210,18 +210,9 @@
           </el-form-item>
         </div>
 
-        <el-divider class="dashed-divider" />
-
-        <el-form-item label="检疫状态" prop="batchStatus">
-          <el-radio-group v-model="form.batchStatus" :disabled="isEditLocked">
-            <el-radio :label="0">待检疫</el-radio>
-            <el-radio :label="1">已检疫(合规)</el-radio>
-          </el-radio-group>
-        </el-form-item>
-
-        <el-form-item label="检疫合格证号" prop="quarantineCertNo" v-if="form.batchStatus === 1">
-          <el-input v-model="form.quarantineCertNo" placeholder="请输入产地检疫合格证编号" clearable :disabled="isEditLocked" />
-        </el-form-item>
+        <div class="mt-2 rounded-xl border border-blue-100 bg-blue-50/60 px-4 py-3 text-xs leading-5 text-blue-700">
+          新采购批次将自动进入“待检疫”。检疫状态和合格证号由监管端审核签发，养殖户不能在采购表单中自行修改。
+        </div>
 
       </el-form>
       <template #footer>
@@ -235,7 +226,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Home, Search, RefreshCw, Truck, AlertCircle } from 'lucide-vue-next'
 // TODO: 替换为实际 API 导入路径
@@ -284,6 +275,18 @@ const supplierOptions = ref([])
 // 苗种品种下拉选项
 const seedlingOptions = ref([])
 
+// 苗种选择由供应商核准目录驱动，不再由养殖户自己的字典决定。
+const availableSeedlings = computed(() => {
+  const supplier = supplierOptions.value.find(item => item.id === form.value.supplierId)
+  if (!supplier) return []
+  const ids = new Set(supplier.seedlingIds || [])
+  return seedlingOptions.value.filter(item => ids.has(item.id))
+})
+
+watch(() => form.value.supplierId, (next, previous) => {
+  if (next !== previous && !isCoreLocked.value) form.value.seedlingId = null
+})
+
 // 计算属性：预估总数 = 包装数量 × 单位密度
 const computedTotal = computed(() => {
   const qty = Number(form.value.unitQty) || 0
@@ -303,6 +306,10 @@ const isEditLocked = computed(() => {
   return !!(form.value.id && form.value.batchStatus === 3)
 })
 
+const isCoreLocked = computed(() => {
+  return !!(form.value.id && form.value.batchStatus >= 1)
+})
+
 // 表单验证规则
 const rules = {
   purchaseDate: [{ required: true, message: '请选择入库日期', trigger: 'change' }],
@@ -311,9 +318,6 @@ const rules = {
   purchaseUnit: [{ required: true, message: '请选择包装单位', trigger: 'change' }],
   unitQty: [{ required: true, message: '请输入包装数量', trigger: 'blur' }],
   densityPerUnit: [{ required: true, message: '请输入单位密度', trigger: 'blur' }],
-  quarantineCertNo: [
-    { required: true, message: '请输入检疫合格证号', trigger: 'blur' }
-  ]
 }
 
 // 初始化
@@ -414,6 +418,8 @@ const submitForm = async () => {
   try {
     // 准备提交数据（不再强制附加 farmId）
     const submitData = { ...form.value }
+    delete submitData.batchStatus
+    delete submitData.quarantineCertNo
 
     // 新增时：如果 batchNo 为 '' / null / undefined，则删除该字段，避免触发后端 @NotBlank 校验
     if (!submitData.id && (submitData.batchNo === '' || submitData.batchNo == null)) {

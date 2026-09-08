@@ -3,7 +3,7 @@
     <!-- 只读说明 -->
     <div class="bg-teal-50/60 border border-teal-100 px-5 py-3.5 rounded-2xl flex items-center gap-3 shadow-sm">
       <Info class="w-5 h-5 text-teal-600 shrink-0" />
-      <span class="text-sm text-teal-700">供应商名录由监督方统一维护，本页仅供查阅，进货时请从该名录中选择供应商。</span>
+      <span class="text-sm text-teal-700">供应商及其可供应苗种由监管方统一核准，本页仅供查阅；采购端只允许选择已核准的供应商—品种组合。</span>
     </div>
 
     <!-- 搜索区 -->
@@ -36,6 +36,14 @@
               {{ scope.row.qualificationCode }}
             </span>
             <span v-else class="text-gray-400 text-sm">暂无记录</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="可供应苗种" min-width="220">
+          <template #default="scope">
+            <div v-if="scope.row.seedlingNames?.length" class="flex flex-wrap gap-1">
+              <el-tag v-for="name in scope.row.seedlingNames" :key="name" size="small" effect="plain">{{ name }}</el-tag>
+            </div>
+            <span v-else class="text-gray-400 text-sm">暂未核准品种</span>
           </template>
         </el-table-column>
       </el-table>

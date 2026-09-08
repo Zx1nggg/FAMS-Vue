@@ -42,6 +42,7 @@
             <tr class="border-b border-gray-100 bg-slate-50/50 text-left">
               <th class="px-5 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider">#</th>
               <th class="px-5 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider">展示昵称</th>
+              <th class="px-5 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider">负责人姓名</th>
               <th class="px-5 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider">养殖场名称</th>
               <th class="px-5 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider">所在地</th>
               <th class="px-5 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider">状态</th>
@@ -54,6 +55,7 @@
               class="border-b border-gray-50 hover:bg-slate-50/50 transition-colors">
               <td class="px-5 py-3 text-slate-400 text-xs">{{ item.id }}</td>
               <td class="px-5 py-3 font-medium text-slate-700">{{ item.username }}</td>
+              <td class="px-5 py-3 text-slate-600">{{ item.realName }}</td>
               <td class="px-5 py-3 text-slate-600">{{ item.farmName }}</td>
               <td class="px-5 py-3 text-slate-500 text-xs">
                 {{ item.farmProvince || '--' }} {{ item.farmCity || '' }}
@@ -132,6 +134,10 @@
             <div>
               <span class="text-xs text-slate-400 uppercase tracking-wider block mb-1">展示昵称</span>
               <span class="font-medium text-slate-800">{{ detailData?.username }}</span>
+            </div>
+            <div>
+              <span class="text-xs text-slate-400 uppercase tracking-wider block mb-1">负责人真实姓名</span>
+              <span class="font-medium text-slate-800">{{ detailData?.realName }}</span>
             </div>
             <div>
               <span class="text-xs text-slate-400 uppercase tracking-wider block mb-1">联系电话</span>

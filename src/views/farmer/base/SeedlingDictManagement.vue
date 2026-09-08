@@ -1,5 +1,8 @@
 <template>
   <div class="space-y-4">
+    <div v-if="!canManage" class="bg-teal-50/60 border border-teal-100 px-5 py-3.5 rounded-2xl text-sm text-teal-700">
+      苗种品类是全系统公共目录，由监管方维护。本页仅供查阅；实际可采购品种以各供应商的核准供应目录为准。
+    </div>
     <!-- 搜索区 -->
     <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex justify-between items-center">
       <el-form :inline="true" :model="queryParams" class="!-mb-4">
@@ -12,7 +15,7 @@
         </el-form-item>
       </el-form>
       
-      <el-button type="primary" class="!rounded-xl !bg-teal-600 !border-none hover:!bg-teal-700" @click="handleAdd">
+      <el-button v-if="canManage" type="primary" class="!rounded-xl !bg-teal-600 !border-none hover:!bg-teal-700" @click="handleAdd">
         <span class="flex items-center gap-1.5"><Plus class="w-4 h-4"/> 新增品种规则</span>
       </el-button>
     </div>
@@ -55,7 +58,7 @@
           </el-table-column>
         </el-table-column>
 
-        <el-table-column label="操作" align="center" width="150" fixed="right">
+        <el-table-column v-if="canManage" label="操作" align="center" width="150" fixed="right">
           <template #default="scope">
             <el-button link type="primary" @click="handleUpdate(scope.row)">修改规则</el-button>
             <el-button link type="danger" @click="handleDelete(scope.row)">删除</el-button>
@@ -134,7 +137,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Search, RefreshCw } from 'lucide-vue-next'
 // 请确保已将你发的接口定义放入 api 中
@@ -145,6 +148,15 @@ const tableData = ref([])
 const loading = ref(false)
 const total = ref(0)
 const queryParams = ref({ pageNum: 1, pageSize: 10, categoryName: '' })
+const canManage = computed(() => {
+  try {
+    const user = JSON.parse(sessionStorage.getItem('aqua_user') || '{}')
+    const role = user.role || user.userType
+    return role === 'REGULATOR' || role === 'ADMIN'
+  } catch {
+    return false
+  }
+})
 
 // 弹窗相关
 const dialogVisible = ref(false)

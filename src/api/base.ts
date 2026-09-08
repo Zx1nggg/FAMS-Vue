@@ -27,6 +27,11 @@ export const addPurchase = (data: any) => request({ url: '/base/purchase-batch',
 export const updatePurchase = (id: string | number, data: any) => request({ url: `/base/purchase-batch/${id}`, method: 'put', data })
 // RESTful: DELETE带ID列表
 export const delPurchase = (ids: string | number) => request({ url: `/base/purchase-batch/${ids}`, method: 'delete' })
+export const approvePurchaseQuarantine = (id: string | number, quarantineCertNo: string) => request({
+  url: `/regulator/purchase-batches/${id}/quarantine-approval`,
+  method: 'put',
+  data: { quarantineCertNo }
+})
 
 // ==================== 苗种字典管理 ====================
 export const getSeedlingPage = (params: Record<string, any>) => request({ url: '/base/seedling-dict/list', method: 'get', params })

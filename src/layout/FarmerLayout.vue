@@ -154,7 +154,7 @@ const menuGroups = [
       { name: '养殖场管理 (切换)', path: '/farmer/base/farm', icon: Home },
       { name: '池塘资产管理', path: '/farmer/base/pond', icon: Box },
       { name: '供应商名录', path: '/farmer/base/supplier', icon: Users },
-      { name: '苗种字典管理', path: '/farmer/base/seedling', icon: BookOpen },
+      { name: '苗种公共目录', path: '/farmer/base/seedling', icon: BookOpen },
       { name: '采购入库登记', path: '/farmer/base/purchase', icon: Truck },
     ]
   },

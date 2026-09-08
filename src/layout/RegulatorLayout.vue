@@ -137,7 +137,7 @@ import request from '@/utils/request'
 import { getCachedAvatar, clearUserCache } from '@/utils/storage'
 // 引入适合监管业务的图标
 import { 
-  LayoutDashboard, Search, AlertTriangle, ShieldCheck, 
+  LayoutDashboard, Search, AlertTriangle, ShieldCheck, Fish,
   ClipboardCheck, Activity, FileText, Shield,
   LogOut, ChevronDown, User, Settings
 } from 'lucide-vue-next'
@@ -157,6 +157,8 @@ const menuGroups = [
     title: '合规与稽查审查',
     items: [
       { name: '供应商资质审查', path: '/regulator/review', icon: ShieldCheck },
+      { name: '苗种公共目录', path: '/regulator/seedlings', icon: Fish },
+      { name: '苗种检疫审核', path: '/regulator/quarantine', icon: ClipboardCheck },
       { name: '线下抽检档案', path: '/regulator/compliance/inspections', icon: ClipboardCheck },
     ]
   },
