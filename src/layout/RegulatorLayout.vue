@@ -127,6 +127,7 @@
         </router-view>
       </main>
     </div>
+    <AiAssistant />
   </div>
 </template>
 
@@ -134,6 +135,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import request from '@/utils/request'
+import AiAssistant from '@/components/AiAssistant.vue'
 import { getCachedAvatar, clearUserCache } from '@/utils/storage'
 // 引入适合监管业务的图标
 import { 

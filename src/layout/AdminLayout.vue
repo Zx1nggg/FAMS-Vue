@@ -60,12 +60,14 @@
         </router-view>
       </main>
     </div>
+    <AiAssistant />
   </div>
 </template>
 
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
 import request from '@/utils/request'
+import AiAssistant from '@/components/AiAssistant.vue'
 import { clearUserCache } from '@/utils/storage'
 import { ClipboardCheck, Gauge, LogOut, UsersRound } from 'lucide-vue-next'
 
